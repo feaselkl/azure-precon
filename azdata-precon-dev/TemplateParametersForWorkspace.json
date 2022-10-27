@@ -1,0 +1,15 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "azdata-precon-dev"
+		},
+		"azdata-precon-dev-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"azdata-precon-dev-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://azdatapreconstoredev.dfs.core.windows.net"
+		}
+	}
+}
