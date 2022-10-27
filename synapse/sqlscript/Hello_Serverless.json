@@ -1,0 +1,17 @@
+{
+	"name": "Hello_Serverless",
+	"properties": {
+		"content": {
+			"query": "SELECT 1",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
