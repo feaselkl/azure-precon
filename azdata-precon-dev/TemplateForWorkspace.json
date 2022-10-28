@@ -153,7 +153,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "a80068d1-7f01-42a3-9d70-05310b35570e"
+						"spark.autotune.trackingId": "539563ae-2e96-4fc0-82ab-d781f39e4478"
 					}
 				},
 				"metadata": {
@@ -195,12 +195,18 @@
 							"relative_path = \"dailyrollups/arabilityscore\"\r\n",
 							"adls_path = 'abfss://%s@%s.dfs.core.windows.net/%s' % (container_name, account_name, relative_path)\r\n",
 							"\r\n",
-							"arability = spark.read.option('header', 'true') \\\r\n",
+							"schema = StructType([\\\r\n",
+							"    StructField(\"PlotID\", IntegerType(), True),\\\r\n",
+							"    StructField(\"ReportDate\", DateType(), True),\\\r\n",
+							"    StructField(\"ArabilityScore\", FloatType(), True)])\r\n",
+							"\r\n",
+							"arability = spark.read.option('header', 'false') \\\r\n",
 							"                .option('delimiter', ',') \\\r\n",
+							"                .schema(schema) \\\r\n",
 							"                .csv(adls_path + '/arabilityscore.csv')"
 						],
 						"outputs": [],
-						"execution_count": 3
+						"execution_count": 13
 					},
 					{
 						"cell_type": "code",
@@ -219,7 +225,7 @@
 							"arability.head(5)"
 						],
 						"outputs": [],
-						"execution_count": 5
+						"execution_count": 15
 					},
 					{
 						"cell_type": "code",
@@ -235,14 +241,86 @@
 							}
 						},
 						"source": [
-							"import benfords\r\n",
-							"\r\n",
-							"test_data = variate(1000)\r\n",
-							"\r\n",
-							"benfords(test_data)"
+							"from pyspark.sql.functions import col"
 						],
 						"outputs": [],
-						"execution_count": 5
+						"execution_count": 22
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"benford_arability = arability.select(\"ArabilityScore\").rdd.map(lambda x : x[0] * 100.0).collect()"
+						],
+						"outputs": [],
+						"execution_count": 31
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"len(benford_arability)"
+						],
+						"outputs": [],
+						"execution_count": 37
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"import benford as bf"
+						],
+						"outputs": [],
+						"execution_count": 35
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"f1d = bf.first_digits(benford_arability, digs=1)"
+						],
+						"outputs": [],
+						"execution_count": 36
 					},
 					{
 						"cell_type": "code",
@@ -285,6 +363,11 @@
 				"nodeSize": "Medium",
 				"nodeSizeFamily": "MemoryOptimized",
 				"sparkVersion": "3.2",
+				"libraryRequirements": {
+					"content": "benfords",
+					"filename": "requirements.txt",
+					"time": "2022-10-28T14:20:15.3507921Z"
+				},
 				"isComputeIsolationEnabled": false,
 				"sessionLevelPackagesEnabled": false,
 				"annotations": []
