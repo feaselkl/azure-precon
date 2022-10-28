@@ -153,7 +153,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "fe02f8ec-4bf7-4fb2-922a-9d693a07a3c6"
+						"spark.autotune.trackingId": "a80068d1-7f01-42a3-9d70-05310b35570e"
 					}
 				},
 				"metadata": {
@@ -217,6 +217,29 @@
 						},
 						"source": [
 							"arability.head(5)"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"import benfords\r\n",
+							"\r\n",
+							"test_data = variate(1000)\r\n",
+							"\r\n",
+							"benfords(test_data)"
 						],
 						"outputs": [],
 						"execution_count": 5
