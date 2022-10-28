@@ -8,8 +8,14 @@
 		"azdata-precon-dev-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
+		"bdadatalake_accountKey": {
+			"value": ""
+		},
 		"azdata-precon-dev-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"value": "https://azdatapreconstoredev.dfs.core.windows.net"
+		},
+		"bdadatalake_properties_typeProperties_url": {
+			"value": "https://bdadatalake.dfs.core.windows.net/"
 		}
 	}
 }
