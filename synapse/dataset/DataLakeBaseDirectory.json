@@ -1,0 +1,20 @@
+{
+	"name": "DataLakeBaseDirectory",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "azdata-precon-dev-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "synapse",
+				"fileSystem": "synapse"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}
