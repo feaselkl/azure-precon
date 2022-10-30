@@ -1,0 +1,17 @@
+{
+	"name": "001 - Create External Objects",
+	"properties": {
+		"content": {
+			"query": "USE [TestDB]\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_data_sources ds\n    WHERE\n        ds.name = N'MarsFarmingCurated'\n)\nBEGIN\n    CREATE EXTERNAL DATA SOURCE [MarsFarmingCurated] WITH\n    (\n        LOCATION = N'https://bdadatalake.dfs.core.windows.net/synapse/marsfarming_curated',\n        CREDENTIAL = [SasTokenWrite]\n    );\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_file_formats ff\n    WHERE\n        ff.name = N'ParquetFileFormat'\n)\nBEGIN\n    CREATE EXTERNAL FILE FORMAT [ParquetFileFormat] WITH\n    (\n        FORMAT_TYPE = PARQUET,\n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n    );\nEND\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "TestDB",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

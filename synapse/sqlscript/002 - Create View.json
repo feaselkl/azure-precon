@@ -1,0 +1,17 @@
+{
+	"name": "002 - Create View",
+	"properties": {
+		"content": {
+			"query": "USE [TestDB]\nGO\nDROP VIEW IF EXISTS dbo.ArabilityScore;\nGO\nCREATE VIEW [dbo].[ArabilityScore] AS\nSELECT\n    arability.*,\n    arability.filepath(1) AS Year,\n    arability.filepath(2) AS Month\nFROM OPENROWSET\n(\n    BULK 'abfss://synapse@bdadatalake.dfs.core.windows.net/marsfarming_curated/ArabilityScore/*/*/*.parquet',\n    FORMAT = 'Parquet'\n)\nWITH\n(\n    -- Because these are Parquet files, the names have to\n    -- match what's in the file metadata.  Or we can remove the WITH clause!\n    PlotID INT,\n    ReportDateTime DATETIME2(0),\n    ArabilityScore DECIMAL(3,2)\n) AS [arability];\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
