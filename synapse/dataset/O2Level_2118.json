@@ -10,7 +10,8 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"folderPath": "marsfarming_curated/O2Level/2118",
+				"fileName": "*",
+				"folderPath": "marsfarming_curated/O2Level/2118/01",
 				"fileSystem": "synapse"
 			},
 			"compressionCodec": "snappy"
