@@ -114,7 +114,8 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
-						"folderPath": "marsfarming_curated/O2Level/2118",
+						"fileName": "*",
+						"folderPath": "marsfarming_curated/O2Level/2118/01",
 						"fileSystem": "synapse"
 					},
 					"compressionCodec": "snappy"
@@ -260,7 +261,8 @@
 						"     allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     ignoreNoFilesFound: false,",
-						"     format: 'parquet') ~> Oxygen2118",
+						"     format: 'parquet',",
+						"     wildcardPaths:['*.parquet']) ~> Oxygen2118",
 						"Oxygen2118 sink(allowSchemaDrift: true,",
 						"     validateSchema: false,",
 						"     format: 'parquet',",
