@@ -1,0 +1,20 @@
+{
+	"name": "O2Level_2118",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "bdadatalake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "marsfarming_curated/O2Level/2118",
+				"fileSystem": "synapse"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}
