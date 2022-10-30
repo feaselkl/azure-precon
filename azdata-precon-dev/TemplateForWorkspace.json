@@ -29,15 +29,6 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('workspaceName'), '/notebookrunner')]",
-			"type": "Microsoft.Synapse/workspaces/bigDataPools",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": []
-			},
-			"dependsOn": []
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/azdata-precon-dev-WorkspaceDefaultSqlServer')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -133,6 +124,66 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/000 - RUN ONCE - Create Security')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.symmetric_keys\n)\nBEGIN\n    CREATE MASTER KEY;\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.database_scoped_credentials dsc\n    WHERE\n        dsc.name = N'SasTokenWrite'\n)\nBEGIN\n    CREATE DATABASE SCOPED CREDENTIAL [SasTokenWrite]\n        WITH IDENTITY = 'SHARED ACCESS SIGNATURE',\n        SECRET = '<FILL IN SAS TOKEN HERE>';\nEND\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/001 - Create External Objects')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_data_sources ds\n    WHERE\n        ds.name = N'MarsFarmingCurated'\n)\nBEGIN\n    CREATE EXTERNAL DATA SOURCE [MarsFarmingCurated] WITH\n    (\n        LOCATION = N'https://bdadatalake.dfs.core.windows.net/synapse/marsfarming_curated',\n        CREDENTIAL = [SasTokenWrite]\n    );\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_file_formats ff\n    WHERE\n        ff.name = N'ParquetFileFormat'\n)\nBEGIN\n    CREATE EXTERNAL FILE FORMAT [ParquetFileFormat] WITH\n    (\n        FORMAT_TYPE = PARQUET,\n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n    );\nEND\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/002 - Create View')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nDROP VIEW IF EXISTS dbo.ArabilityScore;\nGO\nCREATE VIEW [dbo].[ArabilityScore] AS\nSELECT\n    arability.*,\n    arability.filepath(1) AS Year,\n    arability.filepath(2) AS Month\nFROM OPENROWSET\n(\n    BULK 'abfss://synapse@bdadatalake.dfs.core.windows.net/marsfarming_curated/ArabilityScore/*/*/*.parquet',\n    FORMAT = 'Parquet'\n)\nWITH\n(\n    -- Because these are Parquet files, the names have to\n    -- match what's in the file metadata.  Or we can remove the WITH clause!\n    PlotID INT,\n    ReportDateTime DATETIME2(0),\n    ArabilityScore DECIMAL(3,2)\n) AS [arability];\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Access Data Lake')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
@@ -153,7 +204,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "539563ae-2e96-4fc0-82ab-d781f39e4478"
+						"spark.autotune.trackingId": "e8a9551f-7869-44ab-ba8a-ed846c010ffc"
 					}
 				},
 				"metadata": {
@@ -178,15 +229,13 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"from pyspark.sql import SparkSession\r\n",
 							"from pyspark.sql.types import *\r\n",
@@ -364,9 +413,9 @@
 				"nodeSizeFamily": "MemoryOptimized",
 				"sparkVersion": "3.2",
 				"libraryRequirements": {
-					"content": "benfords",
+					"content": "benford_py",
 					"filename": "requirements.txt",
-					"time": "2022-10-28T14:20:15.3507921Z"
+					"time": "2022-10-28T18:45:21.0562652Z"
 				},
 				"isComputeIsolationEnabled": false,
 				"sessionLevelPackagesEnabled": false,
