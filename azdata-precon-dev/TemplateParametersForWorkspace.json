@@ -16,6 +16,9 @@
 		},
 		"bdadatalake_properties_typeProperties_url": {
 			"value": "https://bdadatalake.dfs.core.windows.net/"
+		},
+		"vacctkv_properties_typeProperties_baseUrl": {
+			"value": "https://vacctkv.vault.azure.net/"
 		}
 	}
 }
