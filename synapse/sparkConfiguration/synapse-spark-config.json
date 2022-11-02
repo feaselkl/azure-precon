@@ -1,0 +1,21 @@
+{
+	"name": "synapse-spark-config",
+	"properties": {
+		"configs": {
+			"spark.synapse.logAnalytics.enabled": "true",
+			"spark.synapse.logAnalytics.workspaceId": "fc261f87-42dc-4a20-9da9-da133ba9c6d8",
+			"spark.synapse.logAnalytics.keyVault.name": "vacctkv",
+			"spark.synapse.logAnalytics.keyVault.linkedServiceName": "vacctkv",
+			"spark.synapse.logAnalytics.keyVault.key.secret": "log-analytics-secret-key"
+		},
+		"created": "2022-11-02T12:59:15.5540000-04:00",
+		"createdBy": "feaselkl@gmail.com",
+		"configMergeRule": {
+			"artifact.currentOperation.spark.synapse.logAnalytics.enabled": "replace",
+			"artifact.currentOperation.spark.synapse.logAnalytics.workspaceId": "replace",
+			"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.name": "replace",
+			"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.linkedServiceName": "replace",
+			"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.key.secret": "replace"
+		}
+	}
+}
