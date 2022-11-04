@@ -1,0 +1,36 @@
+name: Deploy Synapse Workspace to Prod
+
+on:
+  push:
+      branches: [ master ]
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: Azure/Synapse-workspace-deployment@V1.7.0
+        with:
+          # Provide the Synapse workspace name where you want to deploy the artifacts.
+          TargetWorkspaceName: '${{ secrets.WORKSPACE }}'
+          # Specify the path to the workspace artifacts template.
+          TemplateFile: './azdata-precon-dev/TemplateForWorkspace.json'
+          # Specify the path to the template parameter file.
+          ParametersFile: './azdata-precon-dev/TemplateParametersForWorkspace.json'
+          # Provide the type of cloud environment. Valid values are: Azure Public, Azure China, Azure US Government, Azure Germany
+          Environment: 'Azure Public'
+          # Provide the resource group of the target Synapse workspace.
+          resourceGroup: '${{ secrets.RESOURCE_GROUP}}'
+          # Provide client id of service principal.
+          clientId: ${{ secrets.CLIENT_ID }}
+          # Provide client secret of the service principal.
+          clientSecret: ${{ secrets.CLIENT_SECRET }}
+          # Provide subscription id.
+          subscriptionId: ${{ secrets.SUB_ID }}
+          # Provide tenant id.
+          tenantId: ${{ secrets.TENANT_ID }}
+          # Delete the artifacts which are in the workspace but not in the template.
+          DeleteArtifactsNotInTemplate: true
+          # Provide name of the operation.
+          operation: 'deploy'
+          
