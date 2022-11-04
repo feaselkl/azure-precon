@@ -1,0 +1,737 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "azdata-precon-dev"
+		},
+		"azdata-precon-dev-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'azdata-precon-dev-WorkspaceDefaultSqlServer'"
+		},
+		"bdadatalake_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'bdadatalake'"
+		},
+		"azdata-precon-dev-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://azdatapreconstoredev.dfs.core.windows.net"
+		},
+		"bdadatalake_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://bdadatalake.dfs.core.windows.net/"
+		},
+		"vacctkv_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://vacctkv.vault.azure.net/"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/Execute Oxygen Load Dataflow')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"Oxygen2118": {},
+									"DataLake": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DataLakeBaseDirectory')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "azdata-precon-dev-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "synapse",
+						"fileSystem": "synapse"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/azdata-precon-dev-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/O2Level_2118')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "bdadatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "*",
+						"folderPath": "marsfarming_curated/O2Level/2118/01",
+						"fileSystem": "synapse"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "PlotID",
+						"type": "INT_32"
+					},
+					{
+						"name": "ReportDateTime",
+						"type": "TIMESTAMP_MICROS"
+					},
+					{
+						"name": "O2Level",
+						"type": "DECIMAL",
+						"precision": 7,
+						"scale": 6
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/bdadatalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/azdata-precon-dev-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('azdata-precon-dev-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/azdata-precon-dev-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('azdata-precon-dev-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/bdadatalake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('bdadatalake_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('bdadatalake_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/vacctkv')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('vacctkv_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Dataflow1')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "O2Level_2118",
+								"type": "DatasetReference"
+							},
+							"name": "Oxygen2118"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DataLakeBaseDirectory",
+								"type": "DatasetReference"
+							},
+							"name": "DataLake"
+						}
+					],
+					"transformations": [],
+					"scriptLines": [
+						"source(output(",
+						"          PlotID as integer,",
+						"          ReportDateTime as timestamp,",
+						"          O2Level as decimal(7,6)",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     format: 'parquet',",
+						"     wildcardPaths:['*.parquet']) ~> Oxygen2118",
+						"Oxygen2118 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'parquet',",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> DataLake"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/O2Level_2118')]",
+				"[concat(variables('workspaceId'), '/datasets/DataLakeBaseDirectory')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/000 - RUN ONCE - Create Security')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.symmetric_keys\n)\nBEGIN\n    CREATE MASTER KEY;\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.database_scoped_credentials dsc\n    WHERE\n        dsc.name = N'SasTokenWrite'\n)\nBEGIN\n    CREATE DATABASE SCOPED CREDENTIAL [SasTokenWrite]\n        WITH IDENTITY = 'SHARED ACCESS SIGNATURE',\n        SECRET = '<FILL IN SAS TOKEN HERE>';\nEND\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/001 - Create External Objects')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_data_sources ds\n    WHERE\n        ds.name = N'MarsFarmingCurated'\n)\nBEGIN\n    CREATE EXTERNAL DATA SOURCE [MarsFarmingCurated] WITH\n    (\n        LOCATION = N'https://bdadatalake.dfs.core.windows.net/synapse/marsfarming_curated',\n        CREDENTIAL = [SasTokenWrite]\n    );\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_file_formats ff\n    WHERE\n        ff.name = N'ParquetFileFormat'\n)\nBEGIN\n    CREATE EXTERNAL FILE FORMAT [ParquetFileFormat] WITH\n    (\n        FORMAT_TYPE = PARQUET,\n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n    );\nEND\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/002 - Create View')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "USE [TestDB]\nGO\nDROP VIEW IF EXISTS dbo.ArabilityScore;\nGO\nCREATE VIEW [dbo].[ArabilityScore] AS\nSELECT\n    arability.*,\n    arability.filepath(1) AS Year,\n    arability.filepath(2) AS Month\nFROM OPENROWSET\n(\n    BULK 'abfss://synapse@bdadatalake.dfs.core.windows.net/marsfarming_curated/ArabilityScore/*/*/*.parquet',\n    FORMAT = 'Parquet'\n)\nWITH\n(\n    -- Because these are Parquet files, the names have to\n    -- match what's in the file metadata.  Or we can remove the WITH clause!\n    PlotID INT,\n    ReportDateTime DATETIME2(0),\n    ArabilityScore DECIMAL(3,2)\n) AS [arability];\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Access Data Lake')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "e8a9551f-7869-44ab-ba8a-ed846c010ffc"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"source": [
+							"from pyspark.sql import SparkSession\r\n",
+							"from pyspark.sql.types import *\r\n",
+							"account_name = \"bdadatalake\"\r\n",
+							"container_name = \"marsfarming\"\r\n",
+							"relative_path = \"dailyrollups/arabilityscore\"\r\n",
+							"adls_path = 'abfss://%s@%s.dfs.core.windows.net/%s' % (container_name, account_name, relative_path)\r\n",
+							"\r\n",
+							"schema = StructType([\\\r\n",
+							"    StructField(\"PlotID\", IntegerType(), True),\\\r\n",
+							"    StructField(\"ReportDate\", DateType(), True),\\\r\n",
+							"    StructField(\"ArabilityScore\", FloatType(), True)])\r\n",
+							"\r\n",
+							"arability = spark.read.option('header', 'false') \\\r\n",
+							"                .option('delimiter', ',') \\\r\n",
+							"                .schema(schema) \\\r\n",
+							"                .csv(adls_path + '/arabilityscore.csv')"
+						],
+						"outputs": [],
+						"execution_count": 13
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"arability.head(5)"
+						],
+						"outputs": [],
+						"execution_count": 15
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"from pyspark.sql.functions import col"
+						],
+						"outputs": [],
+						"execution_count": 22
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"benford_arability = arability.select(\"ArabilityScore\").rdd.map(lambda x : x[0] * 100.0).collect()"
+						],
+						"outputs": [],
+						"execution_count": 31
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"len(benford_arability)"
+						],
+						"outputs": [],
+						"execution_count": 37
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"import benford as bf"
+						],
+						"outputs": [],
+						"execution_count": 35
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"f1d = bf.first_digits(benford_arability, digs=1)"
+						],
+						"outputs": [],
+						"execution_count": 36
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Spark Config Test')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "8da434cc-4862-4fdb-94e5-88876e507b1f"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"spark_log4j = sc._jvm.org.apache.log4j\r\n",
+							"logger = spark_log4j.LogManager.getLogger(\"azdata-precon-dev\")\r\n",
+							"\r\n",
+							"logger.info(\"Test simple log message\")\r\n",
+							"\r\n",
+							"import json\r\n",
+							"msg = {\r\n",
+							"    \"message\":\"Test simple log message\", \r\n",
+							"    \"notebook\": \"Spark Config Test\", \r\n",
+							"    \"source_data\": \"Wherever I get data\", \r\n",
+							"    \"destination_data\": \"Wherever I want to send it\"\r\n",
+							"}\r\n",
+							"logger.info(json.dumps(msg))"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapse-spark-config')]",
+			"type": "Microsoft.Synapse/workspaces/sparkConfigurations",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"configs": {
+					"spark.synapse.logAnalytics.enabled": "true",
+					"spark.synapse.logAnalytics.workspaceId": "fc261f87-42dc-4a20-9da9-da133ba9c6d8",
+					"spark.synapse.logAnalytics.keyVault.name": "vacctkv",
+					"spark.synapse.logAnalytics.keyVault.linkedServiceName": "vacctkv",
+					"spark.synapse.logAnalytics.keyVault.key.secret": "log-analytics-secret-key"
+				},
+				"created": "2022-11-02T12:59:15.5540000-04:00",
+				"createdBy": "feaselkl@gmail.com",
+				"configMergeRule": {
+					"artifact.currentOperation.spark.synapse.logAnalytics.enabled": "replace",
+					"artifact.currentOperation.spark.synapse.logAnalytics.workspaceId": "replace",
+					"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.name": "replace",
+					"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.linkedServiceName": "replace",
+					"artifact.currentOperation.spark.synapse.logAnalytics.keyVault.key.secret": "replace"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/notebookrunner')]",
+			"type": "Microsoft.Synapse/workspaces/bigDataPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"autoPause": {
+					"enabled": true,
+					"delayInMinutes": 15
+				},
+				"autoScale": {
+					"enabled": true,
+					"maxNodeCount": 5,
+					"minNodeCount": 3
+				},
+				"nodeCount": 10,
+				"nodeSize": "Medium",
+				"nodeSizeFamily": "MemoryOptimized",
+				"sparkVersion": "3.2",
+				"libraryRequirements": {
+					"content": "benford_py",
+					"filename": "requirements.txt",
+					"time": "2022-11-02T17:05:11.2355763Z"
+				},
+				"isComputeIsolationEnabled": false,
+				"sparkConfigProperties": {
+					"configurationType": "Artifact",
+					"filename": "synapse-spark-config",
+					"content": "{\"name\":\"synapse-spark-config\",\"properties\":{\"configs\":{\"spark.synapse.logAnalytics.enabled\":\"true\",\"spark.synapse.logAnalytics.workspaceId\":\"fc261f87-42dc-4a20-9da9-da133ba9c6d8\",\"spark.synapse.logAnalytics.keyVault.name\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.key.secret\":\"log-analytics-secret-key\"},\"annotations\":[],\"type\":\"Microsoft.Synapse/workspaces/sparkconfigurations\",\"description\":\"\",\"notes\":\"\",\"created\":\"2022-11-02T12:59:15.5540000-04:00\",\"createdBy\":\"feaselkl@gmail.com\",\"configMergeRule\":{\"admin.currentOperation.spark.synapse.logAnalytics.enabled\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.workspaceId\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.name\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.key.secret\":\"replace\"}}}",
+					"time": "2022-11-02T17:05:11.2355763Z"
+				},
+				"sessionLevelPackagesEnabled": false,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus"
+		}
+	]
+}
