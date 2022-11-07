@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "b0f610d6-7deb-468d-b51a-dc191f3b06ba"
+				"spark.autotune.trackingId": "9021d724-1be2-4bcf-8777-d879da2f9782"
 			}
 		},
 		"metadata": {
@@ -50,6 +50,24 @@
 		"cells": [
 			{
 				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.functions import *"
+				],
+				"execution_count": 5
+			},
+			{
+				"cell_type": "code",
 				"source": [
 					"df = spark.read.format('csv') \\\r\n",
 					"        .option('header',True) \\\r\n",
@@ -57,7 +75,7 @@
 					"        .option('multiLine', True) \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
 				],
-				"execution_count": 4
+				"execution_count": 32
 			},
 			{
 				"cell_type": "code",
@@ -109,8 +127,6 @@
 					}
 				},
 				"source": [
-					"from pyspark.sql.functions import *\r\n",
-					"\r\n",
 					"df_date = df.withColumn(\"InspectionDate\", to_timestamp(col(\"DATE_\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
 					"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
 					"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
@@ -121,7 +137,7 @@
 					"            .drop(\"PERMITID\") \\\r\n",
 					"            .drop(\"OBJECTID\")"
 				],
-				"execution_count": 62
+				"execution_count": 33
 			},
 			{
 				"cell_type": "code",
@@ -178,7 +194,7 @@
 					"        .option('sep', ',') \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/restaurants/Restaurants_in_Wake_County.csv')"
 				],
-				"execution_count": 18
+				"execution_count": 3
 			},
 			{
 				"cell_type": "code",
@@ -220,7 +236,7 @@
 					"                .withColumn(\"X\", col(\"X\").cast('FLOAT')) \\\r\n",
 					"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
 				],
-				"execution_count": 40
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -297,7 +313,7 @@
 					"        .option('sep', ',') \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/violation_codes/Violation_Code.csv')"
 				],
-				"execution_count": 43
+				"execution_count": 7
 			},
 			{
 				"cell_type": "code",
@@ -389,7 +405,25 @@
 				"source": [
 					"df_inspections = df_date.join(rest_final, ['HSISID'], \"left\")"
 				],
-				"execution_count": 66
+				"execution_count": 34
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_inspections.dtypes"
+				],
+				"execution_count": 35
 			},
 			{
 				"cell_type": "code",
@@ -408,6 +442,10 @@
 					"df_inspectionsfinal = df_inspections \\\r\n",
 					"                        .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
 					"                        .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
+					"                        .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
+					"                        .withColumn(\"Description\", col(\"DESCRIPTION\")) \\\r\n",
+					"                        .withColumn(\"Type\", col(\"TYPE\")) \\\r\n",
+					"                        .withColumn(\"Inspector\", col(\"INSPECTOR\")) \\\r\n",
 					"                        .drop(\"NAME\") \\\r\n",
 					"                        .drop(\"ADDRESS1\") \\\r\n",
 					"                        .drop(\"ADDRESS2\") \\\r\n",
@@ -422,7 +460,7 @@
 					"                        .drop(\"GEOCODESTATUS\")\r\n",
 					""
 				],
-				"execution_count": 67
+				"execution_count": 36
 			},
 			{
 				"cell_type": "code",
@@ -440,7 +478,7 @@
 				"source": [
 					"df_inspectionsfinal.head(10)"
 				],
-				"execution_count": 68
+				"execution_count": 37
 			},
 			{
 				"cell_type": "code",
@@ -460,7 +498,239 @@
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
 				],
-				"execution_count": 69
+				"execution_count": 38
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_iv = spark.read.format('csv') \\\r\n",
+					"        .option('header',True) \\\r\n",
+					"        .option('sep', ',') \\\r\n",
+					"        .option('multiLine', True) \\\r\n",
+					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspection_violations/Food_Inspection_Violations.csv')"
+				],
+				"execution_count": 39
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_iv.dtypes"
+				],
+				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivkey = df_iv \\\r\n",
+					"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+					"            .withColumn(\"InspectionDate\", to_timestamp(col(\"INSPECTDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+					"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
+					"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
+					"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
+					"            .withColumn(\"POINTVALUE\", col(\"POINTVALUE\").cast('INT')) \\\r\n",
+					"            .withColumn(\"VIOLATIONKEY\", concat_ws(\"_\", col(\"STATECODE\"), col(\"QUESTIONNO\"), col(\"VIOLATIONCODE\"))) \\\r\n",
+					"            .drop(\"OBJECTID\") \\\r\n",
+					"            .drop(\"INSPECTDATE\") \\\r\n",
+					"            .drop(\"PERMITID\") \\\r\n",
+					"            .drop(\"STATECODE\") \\\r\n",
+					"            .drop(\"QUESTIONNO\") \\\r\n",
+					"            .drop(\"VIOLATIONCODE\") \\\r\n",
+					"            .drop(\"CDCRISKFACTOR\") \\\r\n",
+					"            .drop(\"SHORTDESC\") \\\r\n",
+					"            .drop(\"CDCDATAITEM\")"
+				],
+				"execution_count": 40
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivkey.head(10)"
+				],
+				"execution_count": 20
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivjoin = df_ivkey.join(vc, ['VIOLATIONKEY'], \"left\").join(rest_final, ['HSISID'], \"left\")"
+				],
+				"execution_count": 41
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivjoin.head(10)"
+				],
+				"execution_count": 22
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivjoin.dtypes"
+				],
+				"execution_count": 42
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivfinal = df_ivjoin \\\r\n",
+					"                .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
+					"                .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
+					"                .withColumn(\"ViolationKey\", col(\"VIOLATIONKEY\")) \\\r\n",
+					"                .withColumn(\"Critical\", col(\"CRITICAL\")) \\\r\n",
+					"                .withColumn(\"Category\", col(\"CATEGORY\")) \\\r\n",
+					"                .withColumn(\"Severity\", col(\"SEVERITY\")) \\\r\n",
+					"                .withColumn(\"InspectedBy\", col(\"INSPECTEDBY\")) \\\r\n",
+					"                .withColumn(\"Comments\", col(\"COMMENTS\")) \\\r\n",
+					"                .withColumn(\"PointValue\", col(\"POINTVALUE\")) \\\r\n",
+					"                .withColumn(\"ObservationType\", col(\"OBSERVATIONTYPE\")) \\\r\n",
+					"                .withColumn(\"ViolationType\", col(\"VIOLATIONTYPE\")) \\\r\n",
+					"                .withColumn(\"StateCode\", col(\"STATECODE\")) \\\r\n",
+					"                .withColumn(\"QuestionNo\", col(\"QUESTIONNO\")) \\\r\n",
+					"                .withColumn(\"ViolationCode\", col(\"VIOLATIONCODE\")) \\\r\n",
+					"                .withColumn(\"ShortDesc\", col(\"SHORTDESC\")) \\\r\n",
+					"                .withColumn(\"CDCDataItem\", col(\"CDCDATAITEM\")) \\\r\n",
+					"                .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
+					"                .drop(\"NAME\") \\\r\n",
+					"                .drop(\"ADDRESS1\") \\\r\n",
+					"                .drop(\"ADDRESS2\") \\\r\n",
+					"                .drop(\"CITY\") \\\r\n",
+					"                .drop(\"STATE\") \\\r\n",
+					"                .drop(\"POSTALCODE\") \\\r\n",
+					"                .drop(\"PHONENUMBER\") \\\r\n",
+					"                .drop(\"RESTAURANTOPENDATE\") \\\r\n",
+					"                .drop(\"FACILITYTYPE\") \\\r\n",
+					"                .drop(\"X\") \\\r\n",
+					"                .drop(\"Y\") \\\r\n",
+					"                .drop(\"GEOCODESTATUS\")\r\n",
+					""
+				],
+				"execution_count": 43
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivfinal.dtypes"
+				],
+				"execution_count": 45
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_ivfinal.write.partitionBy(\"Year\", \"Month\", \"Day\") \\\r\n",
+					"  .mode(\"overwrite\") \\\r\n",
+					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspection_violations/')"
+				],
+				"execution_count": 46
 			},
 			{
 				"cell_type": "code",
