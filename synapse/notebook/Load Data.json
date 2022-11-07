@@ -1,0 +1,485 @@
+{
+	"name": "Load Data",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "notebookrunner",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "b0f610d6-7deb-468d-b51a-dc191f3b06ba"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+				"name": "notebookrunner",
+				"type": "Spark",
+				"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"df = spark.read.format('csv') \\\r\n",
+					"        .option('header',True) \\\r\n",
+					"        .option('sep', ',') \\\r\n",
+					"        .option('multiLine', True) \\\r\n",
+					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
+				],
+				"execution_count": 4
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.head(10)"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.dtypes"
+				],
+				"execution_count": 48
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.functions import *\r\n",
+					"\r\n",
+					"df_date = df.withColumn(\"InspectionDate\", to_timestamp(col(\"DATE_\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+					"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
+					"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
+					"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
+					"            .withColumn(\"Score\", col(\"SCORE\").cast('INT')) \\\r\n",
+					"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+					"            .drop(\"DATE_\") \\\r\n",
+					"            .drop(\"PERMITID\") \\\r\n",
+					"            .drop(\"OBJECTID\")"
+				],
+				"execution_count": 62
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_date.dtypes"
+				],
+				"execution_count": 56
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_date.head(10)"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest = spark.read.format('csv') \\\r\n",
+					"        .option('header',True) \\\r\n",
+					"        .option('sep', ',') \\\r\n",
+					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/restaurants/Restaurants_in_Wake_County.csv')"
+				],
+				"execution_count": 18
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest.head(10)"
+				],
+				"execution_count": 24
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Add restaurant chain somehow\r\n",
+					"rest_final = rest.drop(\"OBJECTID\") \\\r\n",
+					"                .withColumn(\"RESTAURANTOPENDATE\", to_timestamp(col(\"RESTAURANTOPENDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+					"                .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+					"                .withColumn(\"PERMITID\", col(\"PERMITID\").cast('INT')) \\\r\n",
+					"                .withColumn(\"X\", col(\"X\").cast('FLOAT')) \\\r\n",
+					"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
+				],
+				"execution_count": 40
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest_final.dtypes"
+				],
+				"execution_count": 38
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest.head(10)"
+				],
+				"execution_count": 26
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest_final.write \\\r\n",
+					"          .mode(\"overwrite\") \\\r\n",
+					"          .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/')"
+				],
+				"execution_count": 41
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"vc = spark.read.format('csv') \\\r\n",
+					"        .option('header',True) \\\r\n",
+					"        .option('sep', ',') \\\r\n",
+					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/violation_codes/Violation_Code.csv')"
+				],
+				"execution_count": 43
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"vc.dtypes"
+				],
+				"execution_count": 44
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"vc.head(10)"
+				],
+				"execution_count": 45
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"vc.write \\\r\n",
+					"  .mode(\"overwrite\") \\\r\n",
+					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/violation_codes/')"
+				],
+				"execution_count": 46
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_date.dtypes"
+				],
+				"execution_count": 57
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_inspections = df_date.join(rest_final, ['HSISID'], \"left\")"
+				],
+				"execution_count": 66
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_inspectionsfinal = df_inspections \\\r\n",
+					"                        .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
+					"                        .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
+					"                        .drop(\"NAME\") \\\r\n",
+					"                        .drop(\"ADDRESS1\") \\\r\n",
+					"                        .drop(\"ADDRESS2\") \\\r\n",
+					"                        .drop(\"CITY\") \\\r\n",
+					"                        .drop(\"STATE\") \\\r\n",
+					"                        .drop(\"POSTALCODE\") \\\r\n",
+					"                        .drop(\"PHONENUMBER\") \\\r\n",
+					"                        .drop(\"RESTAURANTOPENDATE\") \\\r\n",
+					"                        .drop(\"FACILITYTYPE\") \\\r\n",
+					"                        .drop(\"X\") \\\r\n",
+					"                        .drop(\"Y\") \\\r\n",
+					"                        .drop(\"GEOCODESTATUS\")\r\n",
+					""
+				],
+				"execution_count": 67
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_inspectionsfinal.head(10)"
+				],
+				"execution_count": 68
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_inspectionsfinal.write.partitionBy(\"Year\", \"Month\", \"Day\") \\\r\n",
+					"  .mode(\"overwrite\") \\\r\n",
+					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
+				],
+				"execution_count": 69
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": null
+			}
+		]
+	}
+}
