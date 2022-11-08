@@ -1,0 +1,17 @@
+{
+	"name": "Create Violation Codes Table",
+	"properties": {
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE ViolationCode (\n\t[VIOLATIONKEY] nvarchar(200),\n\t[STATECODE] nvarchar(75),\n\t[QUESTIONNO] nvarchar(4),\n\t[VIOLATIONCODE] nvarchar(125),\n\t[SHORTDESC] nvarchar(300),\n\t[CDCDATAITEM] nvarchar(500)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/violation_codes/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.ViolationCode\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "TestDB",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

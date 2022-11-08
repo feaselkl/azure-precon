@@ -1,0 +1,17 @@
+{
+	"name": "Create Inspection Violations Table",
+	"properties": {
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE InspectionViolation (\n\t[HSISID] bigint,\n\t[ViolationKey] nvarchar(200),\n\t[Category] nvarchar(150),\n\t[Critical] nvarchar(10),\n\t[Severity] nvarchar(50),\n\t[InspectedBy] nvarchar(200),\n\t[Comments] nvarchar(max),\n\t[PointValue] int,\n\t[ObservationType] nvarchar(255),\n\t[ViolationType] nvarchar(255),\n\t[InspectionDate] date,\n\t[StateCode] nvarchar(75),\n\t[QuestionNo] nvarchar(4),\n\t[ViolationCode] nvarchar(125),\n\t[ShortDesc] nvarchar(300),\n\t[CDCDataItem] nvarchar(500),\n\t[PermitID] int,\n\t[RestaurantName] nvarchar(4000),\n\t[InspectionKey] nvarchar(100)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/inspection_violations/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.InspectionViolation\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "TestDB",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
