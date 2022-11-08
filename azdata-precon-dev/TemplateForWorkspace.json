@@ -367,6 +367,86 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Create Inspection Violations Table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE InspectionViolation (\n\t[HSISID] bigint,\n\t[ViolationKey] nvarchar(200),\n\t[Category] nvarchar(150),\n\t[Critical] nvarchar(10),\n\t[Severity] nvarchar(50),\n\t[InspectedBy] nvarchar(200),\n\t[Comments] nvarchar(max),\n\t[PointValue] int,\n\t[ObservationType] nvarchar(255),\n\t[ViolationType] nvarchar(255),\n\t[InspectionDate] date,\n\t[StateCode] nvarchar(75),\n\t[QuestionNo] nvarchar(4),\n\t[ViolationCode] nvarchar(125),\n\t[ShortDesc] nvarchar(300),\n\t[CDCDataItem] nvarchar(500),\n\t[PermitID] int,\n\t[RestaurantName] nvarchar(4000),\n\t[InspectionKey] nvarchar(100)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/inspection_violations/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.InspectionViolation\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Inspections Table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE Inspection (\n\t[HSISID] bigint,\n\t[Score] int,\n\t[Description] nvarchar(max),\n\t[Type] nvarchar(150),\n\t[Inspector] nvarchar(150),\n\t[InspectionDate] date,\n\t[PermitID] int,\n\t[RestaurantName] nvarchar(4000),\n\t[InspectionKey] nvarchar(100)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/inspections/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Inspection\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Restaurants Table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE Restaurant (\n\t[HSISID] bigint,\n\t[NAME] nvarchar(4000),\n\t[ADDRESS1] nvarchar(200),\n\t[ADDRESS2] nvarchar(200),\n\t[CITY] nvarchar(75),\n\t[STATE] nvarchar(20),\n\t[POSTALCODE] nvarchar(20),\n\t[PHONENUMBER] nvarchar(50),\n\t[RESTAURANTOPENDATE] date,\n\t[FACILITYTYPE] nvarchar(50),\n\t[PERMITID] int,\n\t[X] real,\n\t[Y] real,\n\t[GEOCODESTATUS] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/restaurants/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Restaurant\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Violation Codes Table')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE ViolationCode (\n\t[VIOLATIONKEY] nvarchar(200),\n\t[STATECODE] nvarchar(75),\n\t[QUESTIONNO] nvarchar(4),\n\t[VIOLATIONCODE] nvarchar(125),\n\t[SHORTDESC] nvarchar(300),\n\t[CDCDATAITEM] nvarchar(500)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/violation_codes/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.ViolationCode\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "TestDB",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Access Data Lake')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
@@ -578,7 +658,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Load Data')]",
+			"name": "[concat(parameters('workspaceName'), '/Create Refined Lake DB Tables')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -598,7 +678,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "b01552fc-b273-40c6-a089-df2837c8ed76"
+						"spark.autotune.trackingId": "999c77b3-e854-4485-9a6d-0b73b9ae9045"
 					}
 				},
 				"metadata": {
@@ -623,8 +703,95 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"spark.sql(\"CREATE TABLE IF NOT EXISTS default.Inspections USING Parquet LOCATION 'https://azdatapreconstoredev.dfs.core.windows.net/synapse/wakeinspections/refined/inspections/**'\")"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Load Data')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "0dcc11f7-7fc4-4585-93a7-f7a8c209bb7d"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -650,7 +817,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"df = spark.read.format('csv') \\\r\n",
 							"        .option('header',True) \\\r\n",
