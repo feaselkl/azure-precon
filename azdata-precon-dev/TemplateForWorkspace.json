@@ -1631,6 +1631,111 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Test Custom Code')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "f72df135-762c-4654-96c0-e12517876dae"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"from custompkg import add_numbers\r\n",
+							"\r\n",
+							"res = add_numbers(8, 6)"
+						],
+						"outputs": [],
+						"execution_count": 8
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"res"
+						],
+						"outputs": [],
+						"execution_count": 9
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/synapse-spark-config')]",
 			"type": "Microsoft.Synapse/workspaces/sparkConfigurations",
 			"apiVersion": "2019-06-01-preview",
@@ -1675,16 +1780,17 @@
 				"libraryRequirements": {
 					"content": "benford_py",
 					"filename": "requirements.txt",
-					"time": "2022-11-02T17:05:11.2355763Z"
+					"time": "2022-11-12T19:33:06.9493381Z"
 				},
 				"isComputeIsolationEnabled": false,
 				"sparkConfigProperties": {
 					"configurationType": "Artifact",
 					"filename": "synapse-spark-config",
 					"content": "{\"name\":\"synapse-spark-config\",\"properties\":{\"configs\":{\"spark.synapse.logAnalytics.enabled\":\"true\",\"spark.synapse.logAnalytics.workspaceId\":\"fc261f87-42dc-4a20-9da9-da133ba9c6d8\",\"spark.synapse.logAnalytics.keyVault.name\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.key.secret\":\"log-analytics-secret-key\"},\"annotations\":[],\"type\":\"Microsoft.Synapse/workspaces/sparkconfigurations\",\"description\":\"\",\"notes\":\"\",\"created\":\"2022-11-02T12:59:15.5540000-04:00\",\"createdBy\":\"feaselkl@gmail.com\",\"configMergeRule\":{\"admin.currentOperation.spark.synapse.logAnalytics.enabled\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.workspaceId\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.name\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.key.secret\":\"replace\"}}}",
-					"time": "2022-11-02T17:05:11.2355763Z"
+					"time": "2022-11-12T19:33:06.9493381Z"
 				},
 				"sessionLevelPackagesEnabled": false,
+				"customLibraries": [],
 				"annotations": []
 			},
 			"dependsOn": [],
