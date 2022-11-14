@@ -1,0 +1,7 @@
+setup.py
+custompkg/__init__.py
+custompkg/operations.py
+operations.egg-info/PKG-INFO
+operations.egg-info/SOURCES.txt
+operations.egg-info/dependency_links.txt
+operations.egg-info/top_level.txt
