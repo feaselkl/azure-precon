@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "0dcc11f7-7fc4-4585-93a7-f7a8c209bb7d"
+				"spark.autotune.trackingId": "86b5175c-122e-4f76-8337-3be6e1a2e03e"
 			}
 		},
 		"metadata": {
@@ -49,6 +49,23 @@
 		},
 		"cells": [
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Load Data into the Data Lake\r\n",
+					"\r\n",
+					"In this notebook, we will load Wake County, North Carolina food service inspection data.  We already have raw data in our data lake but we will take this opportunity to learn more about it and refine the data for downstream use.\r\n",
+					"\r\n",
+					"The first thing we will need to do is import everything in the `pyspark.sql.functions` namespace."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -67,6 +84,21 @@
 				"execution_count": 5
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Food Inspections Data\r\n",
+					"\r\n",
+					"There are several files in our dataset.  The first one we will look at includes food inspections over the course of a decade.  At least once per year, each restaurant, food truck, mobile food vendor, meat market, and even elder care facilities and schools need to be inspected to ensure that they comply with State of North Carolina laws regarding food preparation and handling.  Then, each facility gets a numeric score.  For facilities open to the general public, they need to display this score in a prominent location. "
+				]
+			},
+			{
 				"cell_type": "code",
 				"source": [
 					"df = spark.read.format('csv') \\\r\n",
@@ -76,6 +108,19 @@
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
 				],
 				"execution_count": 32
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Using the `head()` function, we can get an idea of the first few rows of data."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -96,6 +141,19 @@
 				"execution_count": 11
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"The `dtypes` attribute is built in and shows us the data types for each attribute on our DataFrame.  We can see that some of these attributes are not what we would have expected."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -112,6 +170,25 @@
 					"df.dtypes"
 				],
 				"execution_count": 48
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"An important paradigm when working with Spark DataFrames is the concept of **immutability**.  In other words, we don't modify data in a DataFrame (or its underlying Resilient Distributed Dataset).  Instead, we apply transformation functions to the data and generate a new result.  This allows us to create a new DataFrame with what we need, while still retaining the current DataFrame in the event that we need to start over or if some other user needs it still.\r\n",
+					"\r\n",
+					"The `withColumn()` function lets us replace an existing column or add a new column based on some functional operation.  In this case, we will convert the `DATE_` string into an `InspectionDate` and then break out the parts of inspection date, giving us year, month, and day.\r\n",
+					"\r\n",
+					"We can also use the `drop()` function to remove a column altogether from a DataFrame.\r\n",
+					"\r\n",
+					"Note that with Python, we need to use a backslash (`\\`) to indicate that our statement is not yet finished.  If we were using Scala, that backslash would not be necessary. "
+				]
 			},
 			{
 				"cell_type": "code",
@@ -140,6 +217,19 @@
 				"execution_count": 33
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Now that we have made some modifications and created a new DataFrame, let's make sure that everything looks correct."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -158,6 +248,19 @@
 				"execution_count": 56
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"We can also review the top ten rows and ensure that all is well."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -174,6 +277,21 @@
 					"df_date.head(10)"
 				],
 				"execution_count": 17
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Extending the Story:  Restaurants\r\n",
+					"\r\n",
+					"Each inspection has an `HSISID`, which represents the food service facility.  We'd like to learn more about those facilities and to do so, we can import some restaurant data for the purposes of lookup.  This is a set of restaurants in Wake County and is maintained by the same department which handles food service inspections. "
+				]
 			},
 			{
 				"cell_type": "code",
@@ -197,6 +315,19 @@
 				"execution_count": 3
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Reviewing the top 10 restaurants, we can see what we have available."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -215,6 +346,19 @@
 				"execution_count": 24
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Having reviewed our options, we can create a final restaurant DataFrame by reshaping some of the inputs."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -228,7 +372,6 @@
 					}
 				},
 				"source": [
-					"# Add restaurant chain somehow\r\n",
 					"rest_final = rest.drop(\"OBJECTID\") \\\r\n",
 					"                .withColumn(\"RESTAURANTOPENDATE\", to_timestamp(col(\"RESTAURANTOPENDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
 					"                .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
@@ -237,6 +380,19 @@
 					"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
 				],
 				"execution_count": 6
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Here is the structure of our restaurants DataFrame."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -257,6 +413,19 @@
 				"execution_count": 38
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"And here are the first few records of it."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -273,6 +442,21 @@
 					"rest.head(10)"
 				],
 				"execution_count": 26
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Because we don't have any additional data to include here, we can write the restaurants to our `\\refined\\` folder.\r\n",
+					"\r\n",
+					"We will write the output data in Parquet format, ensuring that we retain data types, data lengths, and column names.  That way, downstream users will automatically get the fruits of our labor here."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -293,6 +477,21 @@
 					"          .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/')"
 				],
 				"execution_count": 41
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Violation Codes\r\n",
+					"\r\n",
+					"Almost every inspection will include at least one violation.  This violation codes table represents a lookup table of the various violation codes in our dataset."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -352,6 +551,19 @@
 				"execution_count": 45
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"This data is already in reasonable condition, so we can write it directly to the `\\refined\\` directory without any additional work."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -372,6 +584,21 @@
 				"execution_count": 46
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Enhancing Inspections\r\n",
+					"\r\n",
+					"As a quick reminder, here is what we have on the inspections DataFrame."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -388,6 +615,19 @@
 					"df_date.dtypes"
 				],
 				"execution_count": 57
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"We can see an `HSISID`, which we know ties to the food service facility.  Using the `join()` function, we can join our inspection data to the restaurants DataFrame.  Note that we perform a left outer join here, as we don't know for sure that every inspection ties to a restaurant in the current dataset--it is possible that some restaurants do not show up in the dataset for whatever reason."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -408,6 +648,19 @@
 				"execution_count": 34
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"The process of joining brings together the full set of attributes from both sides, making this a bit different from a classic SQL join operation."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -424,6 +677,19 @@
 					"df_inspections.dtypes"
 				],
 				"execution_count": 35
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Let's narrow down the set of columns.  We'll keep restaurant name and permit ID from the restaurants DataFrame but drop most of the rest.  Also, we will change the casing on several columns and create a new column called `InspectionKey`, which gives us a unique identifier for an inspection.  We use `concat_ws()` (concatenate with separator) to create a key based on the facility ID and the date of inspection, with each ID or date part separated by underscores."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -463,6 +729,19 @@
 				"execution_count": 36
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Here is what our inspections data looks like now."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -481,6 +760,19 @@
 				"execution_count": 37
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"With this in place, we can call our refining process complete and will write out data.  Note that we partition this by year and month, so in the `\\refined\\inspections\\` folder, we will be able to drill into each year and month, so for example, `\\refined\\inspections\\2018\\04\\` would include all restaurant inspections for April of 2018."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -494,11 +786,26 @@
 					}
 				},
 				"source": [
-					"df_inspectionsfinal.write.partitionBy(\"Year\", \"Month\", \"Day\") \\\r\n",
+					"df_inspectionsfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
 				],
 				"execution_count": 38
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Inspection Violations\r\n",
+					"\r\n",
+					"The actual inspection violations are in a different file from the inspections themselves and there is a one to zero or more relationship between inspections and violations.  Typically, this relationship is one to many."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -523,6 +830,19 @@
 				"execution_count": 39
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Here is the shape of the inspection data as it comes in."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -539,6 +859,19 @@
 					"df_iv.dtypes"
 				],
 				"execution_count": 9
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Based on our experience with other datasets, we can already perform some operations, like creating an inspection date, casting different attributes to known data types, and dropping other columns.  We will drop everything associated with the violation code here."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -593,6 +926,19 @@
 				"execution_count": 20
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"We can perform multiple joins, bringing together data from several tables.  In this case, we drive from inspection violations and perform left outer joints on violation code (`vc`) and restaurants (`rest_final`) based on their key columns."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -609,6 +955,19 @@
 					"df_ivjoin = df_ivkey.join(vc, ['VIOLATIONKEY'], \"left\").join(rest_final, ['HSISID'], \"left\")"
 				],
 				"execution_count": 41
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Now let's look at what we've done."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -645,6 +1004,19 @@
 					"df_ivjoin.dtypes"
 				],
 				"execution_count": 42
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"The end result is that we have a large number of columns.  Therefore, we'll want to prune them down and include only the columns we intend to keep."
+				]
 			},
 			{
 				"cell_type": "code",
@@ -713,6 +1085,19 @@
 				"execution_count": 45
 			},
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Similarly to inspections, we want to get inspection violations by month and write them into the `\\refined\\` folder."
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"jupyter": {
@@ -726,7 +1111,7 @@
 					}
 				},
 				"source": [
-					"df_ivfinal.write.partitionBy(\"Year\", \"Month\", \"Day\") \\\r\n",
+					"df_ivfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspection_violations/')"
 				],
