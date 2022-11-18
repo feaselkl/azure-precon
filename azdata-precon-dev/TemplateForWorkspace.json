@@ -1731,7 +1731,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "7dd427e0-a0db-4ce0-82ea-d9ffb075c77c"
+						"spark.autotune.trackingId": "9d1f2569-ec2d-48cc-bf05-f5622cb28846"
 					}
 				},
 				"metadata": {
@@ -1756,13 +1756,32 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56
+						"memory": 56,
+						"automaticScaleJobs": false
 					},
 					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Spark Config Test\r\n",
+							"\r\n",
+							"This is a test of a simple notebook which logs data to Log Analytics.  We specify the logger name as `azdata-precon-dev` though we can choose whatever we'd like here.  It would be a good idea to use the name of your application in this space, so you can filter by application name in Log Analytics.\r\n",
+							"\r\n",
+							"From there, we call `logger.info()` to write out two messages, one which is simple text and the other which is slightly more complex JSON."
+						]
+					},
+					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"spark_log4j = sc._jvm.org.apache.log4j\r\n",
 							"logger = spark_log4j.LogManager.getLogger(\"azdata-precon-dev\")\r\n",
@@ -1825,7 +1844,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "e3d46da8-b7f6-4f8f-962b-3ee049ad444b"
+						"spark.autotune.trackingId": "dcec476b-264f-4482-9795-35be21251dfd"
 					}
 				},
 				"metadata": {
@@ -1850,8 +1869,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -1873,7 +1891,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"from custompkg import add_numbers\r\n",
 							"\r\n",
