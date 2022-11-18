@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "7dd427e0-a0db-4ce0-82ea-d9ffb075c77c"
+				"spark.autotune.trackingId": "5d9abf62-c35d-451c-a71b-6c67a26dde2d"
 			}
 		},
 		"metadata": {
@@ -48,6 +48,23 @@
 			"sessionKeepAliveTimeout": 30
 		},
 		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Spark Config Test\r\n",
+					"\r\n",
+					"This is a test of a simple notebook which logs data to Log Analytics.  We specify the logger name as `azdata-precon-dev` though we can choose whatever we'd like here.  It would be a good idea to use the name of your application in this space, so you can filter by application name in Log Analytics.\r\n",
+					"\r\n",
+					"From there, we call `logger.info()` to write out two messages, one which is simple text and the other which is slightly more complex JSON."
+				]
+			},
 			{
 				"cell_type": "code",
 				"source": [
