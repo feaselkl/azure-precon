@@ -467,7 +467,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "f927bf9d-d78c-4647-8f9a-57687f695b4c"
+						"spark.autotune.trackingId": "999c77b3-e854-4485-9a6d-0b73b9ae9045"
 					}
 				},
 				"metadata": {
@@ -492,8 +492,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -556,7 +555,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "5c967896-fa22-4724-a2e1-ad3fc09f15ac"
+						"spark.autotune.trackingId": "86b5175c-122e-4f76-8337-3be6e1a2e03e"
 					}
 				},
 				"metadata": {
@@ -581,8 +580,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -640,7 +638,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"df = spark.read.format('csv') \\\r\n",
 							"        .option('header',True) \\\r\n",
@@ -1734,7 +1731,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "35bdbe43-5f30-4be0-89fc-bd84d0db1979"
+						"spark.autotune.trackingId": "7dd427e0-a0db-4ce0-82ea-d9ffb075c77c"
 					}
 				},
 				"metadata": {
@@ -1759,15 +1756,13 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
+						"memory": 56
 					},
 					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"spark_log4j = sc._jvm.org.apache.log4j\r\n",
 							"logger = spark_log4j.LogManager.getLogger(\"azdata-precon-dev\")\r\n",
@@ -1830,7 +1825,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "37a77862-4082-48ce-8274-64140f8714c2"
+						"spark.autotune.trackingId": "e3d46da8-b7f6-4f8f-962b-3ee049ad444b"
 					}
 				},
 				"metadata": {
@@ -1861,6 +1856,21 @@
 					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Testing Custom Code\r\n",
+							"\r\n",
+							"After we import a package, we can import it here.  One important thing to note here is that we want to keep the names of packages and folders consistent.  Note that we need to bring in the `custompkg` namespace even though the wheel file is called `operations`."
+						]
+					},
 					{
 						"cell_type": "code",
 						"metadata": {},
@@ -1906,6 +1916,461 @@
 						},
 						"source": [
 							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/The Basics of Python')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "6d9b360d-6de8-453e-8742-b900a5f533b0"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# The Basics of Python and Notebooks\r\n",
+							"\r\n",
+							"Although you might not always use notebooks to execute code in Spark, this is an easy way to get started and try things out.\r\n",
+							"\r\n",
+							"In Synapse, you can create two separate blocks:  **Code** blocks and **Markdown** blocks.  This is a markdown block, allowing us to include text, images, links, and other resources to help explain the code."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"from pyspark.sql.functions import sum, avg, max, count"
+						],
+						"outputs": [],
+						"execution_count": 26
+					},
+					{
+						"cell_type": "code",
+						"source": [
+							"x = 1\r\n",
+							"y = 2\r\n",
+							"x + y"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"print(\"This is a message.\")"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Here is how we create a function:  the `def` keyword.  We take in parameters but do not need to define types."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"def add_two_numbers(a, b):\r\n",
+							"    a+b"
+						],
+						"outputs": [],
+						"execution_count": 3
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Let's try the function and see what happens."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"add_two_numbers(3,6)"
+						],
+						"outputs": [],
+						"execution_count": 4
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"The reason that we don't get any results back is that we need to use the `return` keyword."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"def add_two_numbers(a, b):\r\n",
+							"    return a+b"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"add_two_numbers(3,6)"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Creating Data\r\n",
+							"\r\n",
+							"Let's create some basic data."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"data1 = ((\"Bob\", \"IT\", 4500), \\\r\n",
+							"(\"Maria\", \"IT\", 4600),  \\\r\n",
+							"(\"James\", \"IT\", 3850),   \\\r\n",
+							"(\"Maria\", \"HR\", 4500),  \\\r\n",
+							"(\"James\", \"IT\", 4500),    \\\r\n",
+							"(\"Sam\", \"HR\", 3300),  \\\r\n",
+							"(\"Jen\", \"HR\", 3900),    \\\r\n",
+							"(\"Jeff\", \"Marketing\", 4500), \\\r\n",
+							"(\"Anand\", \"Marketing\", 2000),\\\r\n",
+							"(\"Shaid\", \"IT\", 3850) \\\r\n",
+							")\r\n",
+							"\r\n",
+							"col = [\"Name\", \"Role\", \"MonthlyIncome\"]\r\n",
+							"b = spark.createDataFrame(data1,col)"
+						],
+						"outputs": [],
+						"execution_count": 16
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Calling the variable describes the DataFrame."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"b"
+						],
+						"outputs": [],
+						"execution_count": 17
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"If we want to view the data, we need to perform an action using the `show()` command."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"b.show()"
+						],
+						"outputs": [],
+						"execution_count": 18
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We can also perform transformations.  Note, however, that these do not run immediately.  Transformations are **lazy**, meaning we only perform the transformations after an action like `show()`."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"b2 = b.groupBy(\"Role\").agg(\r\n",
+							"        sum(\"MonthlyIncome\").alias(\"IncomeSum\"), \\\r\n",
+							"        avg(\"MonthlyIncome\").alias(\"IncomeAvg\"), \\\r\n",
+							"        count(\"MonthlyIncome\").alias(\"NumEmployees\")\r\n",
+							")"
+						],
+						"outputs": [],
+						"execution_count": 27
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"b2.show()"
+						],
+						"outputs": [],
+						"execution_count": 28
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Reading Data\r\n",
+							"\r\n",
+							"We can use `spark.read` to read in a DataFrame.  There are several supported formats.  We'll use Parquet, which works nicely for our purposes."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# TODO!\r\n",
+							"\r\n",
+							"df = spark.read.parquet('https://cspolybasepublic.blob.core.windows.net/polybaserevealedpublicdata/O2Level.parquet')"
+						],
+						"outputs": [],
+						"execution_count": 29
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Writing Data\r\n",
+							"\r\n",
+							"The next step is to write data out someplace."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# TODO!"
 						],
 						"outputs": [],
 						"execution_count": null
