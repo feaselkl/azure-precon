@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "18beed24-2183-4b9f-bcb5-04172564bb79"
+				"spark.autotune.trackingId": "dcec476b-264f-4482-9795-35be21251dfd"
 			}
 		},
 		"metadata": {
@@ -48,6 +48,21 @@
 			"sessionKeepAliveTimeout": 30
 		},
 		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Testing Custom Code\r\n",
+					"\r\n",
+					"After we import a package, we can import it here.  One important thing to note here is that we want to keep the names of packages and folders consistent.  Note that we need to bring in the `custompkg` namespace even though the wheel file is called `operations`."
+				]
+			},
 			{
 				"cell_type": "code",
 				"source": [
