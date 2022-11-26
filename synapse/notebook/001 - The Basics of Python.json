@@ -1,5 +1,5 @@
 {
-	"name": "The Basics of Python",
+	"name": "001 - The Basics of Python",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -13,7 +13,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "6d9b360d-6de8-453e-8742-b900a5f533b0"
+				"spark.autotune.trackingId": "545d203d-83fa-4c2e-8529-6183df24565c"
 			}
 		},
 		"metadata": {

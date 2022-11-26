@@ -1,5 +1,5 @@
 {
-	"name": "Create Refined Lake DB Tables",
+	"name": "004 - Create Refined Lake DB Tables",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "999c77b3-e854-4485-9a6d-0b73b9ae9045"
+				"spark.autotune.trackingId": "2fb66e87-bf90-4950-8495-e954a3878fb7"
 			}
 		},
 		"metadata": {
@@ -59,7 +59,7 @@
 					"%%pyspark\n",
 					"spark.sql(\"CREATE TABLE IF NOT EXISTS default.Inspections USING Parquet LOCATION 'https://azdatapreconstoredev.dfs.core.windows.net/synapse/wakeinspections/refined/inspections/**'\")"
 				],
-				"execution_count": 2
+				"execution_count": 1
 			},
 			{
 				"cell_type": "code",
