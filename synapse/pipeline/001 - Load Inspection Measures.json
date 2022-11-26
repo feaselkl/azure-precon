@@ -1,0 +1,40 @@
+{
+	"name": "001 - Load Inspection Measures",
+	"properties": {
+		"activities": [
+			{
+				"name": "Load Inspection Measures",
+				"type": "SynapseNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebook": {
+						"referenceName": "005 - Curate Inspections",
+						"type": "NotebookReference"
+					},
+					"snapshot": true,
+					"sparkPool": {
+						"referenceName": "notebookrunner",
+						"type": "BigDataPoolReference"
+					},
+					"executorSize": "Small",
+					"conf": {
+						"spark.dynamicAllocation.enabled": true,
+						"spark.dynamicAllocation.minExecutors": 2,
+						"spark.dynamicAllocation.maxExecutors": 4
+					},
+					"driverSize": "Small",
+					"numExecutors": 2
+				}
+			}
+		],
+		"annotations": []
+	}
+}
