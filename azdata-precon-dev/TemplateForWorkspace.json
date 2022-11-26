@@ -26,59 +26,16 @@
 		"vacctkv_properties_typeProperties_baseUrl": {
 			"type": "string",
 			"defaultValue": "https://vacctkv.vault.azure.net/"
+		},
+		"Run on Data Load_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Storage/storageAccounts/azdatapreconstoredev"
 		}
 	},
 	"variables": {
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
-		{
-			"name": "[concat(parameters('workspaceName'), '/Execute Oxygen Load Dataflow')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "Data flow1",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "Dataflow1",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"Oxygen2118": {},
-									"DataLake": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
-			]
-		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/DataLakeBaseDirectory')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
@@ -307,12 +264,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/000 - RUN ONCE - Create Security')]",
+			"name": "[concat(parameters('workspaceName'), '/S001 - Create Restaurants Table')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "USE [TestDB]\nGO\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.symmetric_keys\n)\nBEGIN\n    CREATE MASTER KEY;\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.database_scoped_credentials dsc\n    WHERE\n        dsc.name = N'SasTokenWrite'\n)\nBEGIN\n    CREATE DATABASE SCOPED CREDENTIAL [SasTokenWrite]\n        WITH IDENTITY = 'SHARED ACCESS SIGNATURE',\n        SECRET = '<FILL IN SAS TOKEN HERE>';\nEND\nGO",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nIF NOT EXISTS(SELECT * FROM sys.external_tables WHERE name = 'Restaurant')\n\tCREATE EXTERNAL TABLE Restaurant (\n\t\t[HSISID] bigint,\n\t\t[NAME] nvarchar(4000),\n\t\t[ADDRESS1] nvarchar(200),\n\t\t[ADDRESS2] nvarchar(200),\n\t\t[CITY] nvarchar(75),\n\t\t[STATE] nvarchar(20),\n\t\t[POSTALCODE] nvarchar(20),\n\t\t[PHONENUMBER] nvarchar(50),\n\t\t[RESTAURANTOPENDATE] date,\n\t\t[FACILITYTYPE] nvarchar(50),\n\t\t[PERMITID] int,\n\t\t[X] real,\n\t\t[Y] real,\n\t\t[GEOCODESTATUS] nvarchar(4000)\n\t\t)\n\t\tWITH (\n\t\tLOCATION = 'wakeinspections/refined/restaurants/**',\n\t\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\t\tFILE_FORMAT = [SynapseParquetFormat]\n\t\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Restaurant\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -327,12 +284,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/001 - Create External Objects')]",
+			"name": "[concat(parameters('workspaceName'), '/S002 - Create Violation Codes Table')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "USE [TestDB]\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_data_sources ds\n    WHERE\n        ds.name = N'MarsFarmingCurated'\n)\nBEGIN\n    CREATE EXTERNAL DATA SOURCE [MarsFarmingCurated] WITH\n    (\n        LOCATION = N'https://bdadatalake.dfs.core.windows.net/synapse/marsfarming_curated',\n        CREDENTIAL = [SasTokenWrite]\n    );\nEND\nGO\nIF NOT EXISTS\n(\n    SELECT *\n    FROM sys.external_file_formats ff\n    WHERE\n        ff.name = N'ParquetFileFormat'\n)\nBEGIN\n    CREATE EXTERNAL FILE FORMAT [ParquetFileFormat] WITH\n    (\n        FORMAT_TYPE = PARQUET,\n        DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n    );\nEND\nGO\n",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nIF NOT EXISTS(SELECT * FROM sys.external_tables WHERE name = 'ViolationCode')\n\tCREATE EXTERNAL TABLE ViolationCode (\n\t\t[VIOLATIONKEY] nvarchar(200),\n\t\t[STATECODE] nvarchar(75),\n\t\t[QUESTIONNO] nvarchar(4),\n\t\t[VIOLATIONCODE] nvarchar(125),\n\t\t[SHORTDESC] nvarchar(300),\n\t\t[CDCDATAITEM] nvarchar(500)\n\t\t)\n\t\tWITH (\n\t\tLOCATION = 'wakeinspections/refined/violation_codes/**',\n\t\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\t\tFILE_FORMAT = [SynapseParquetFormat]\n\t\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.ViolationCode\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -347,32 +304,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/002 - Create View')]",
+			"name": "[concat(parameters('workspaceName'), '/S003 - Create Inspections Table')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "USE [TestDB]\nGO\nDROP VIEW IF EXISTS dbo.ArabilityScore;\nGO\nCREATE VIEW [dbo].[ArabilityScore] AS\nSELECT\n    arability.*,\n    arability.filepath(1) AS Year,\n    arability.filepath(2) AS Month\nFROM OPENROWSET\n(\n    BULK 'abfss://synapse@bdadatalake.dfs.core.windows.net/marsfarming_curated/ArabilityScore/*/*/*.parquet',\n    FORMAT = 'Parquet'\n)\nWITH\n(\n    -- Because these are Parquet files, the names have to\n    -- match what's in the file metadata.  Or we can remove the WITH clause!\n    PlotID INT,\n    ReportDateTime DATETIME2(0),\n    ArabilityScore DECIMAL(3,2)\n) AS [arability];\nGO\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Create Inspection Violations Table')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE InspectionViolation (\n\t[HSISID] bigint,\n\t[ViolationKey] nvarchar(200),\n\t[Category] nvarchar(150),\n\t[Critical] nvarchar(10),\n\t[Severity] nvarchar(50),\n\t[InspectedBy] nvarchar(200),\n\t[Comments] nvarchar(max),\n\t[PointValue] int,\n\t[ObservationType] nvarchar(255),\n\t[ViolationType] nvarchar(255),\n\t[InspectionDate] date,\n\t[StateCode] nvarchar(75),\n\t[QuestionNo] nvarchar(4),\n\t[ViolationCode] nvarchar(125),\n\t[ShortDesc] nvarchar(300),\n\t[CDCDataItem] nvarchar(500),\n\t[PermitID] int,\n\t[RestaurantName] nvarchar(4000),\n\t[InspectionKey] nvarchar(100)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/inspection_violations/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.InspectionViolation\nGO",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nIF NOT EXISTS(SELECT * FROM sys.external_tables WHERE name = 'Inspection')\n\tCREATE EXTERNAL TABLE Inspection (\n\t\t[HSISID] bigint,\n\t\t[Score] int,\n\t\t[Description] nvarchar(max),\n\t\t[Type] nvarchar(150),\n\t\t[Inspector] nvarchar(150),\n\t\t[InspectionDate] date,\n\t\t[PermitID] int,\n\t\t[RestaurantName] nvarchar(4000),\n\t\t[InspectionKey] nvarchar(100)\n\t\t)\n\t\tWITH (\n\t\tLOCATION = 'wakeinspections/refined/inspections/**',\n\t\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\t\tFILE_FORMAT = [SynapseParquetFormat]\n\t\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Inspection\nGO\n\n-- Note that this does NOT allow for partition elimination!\n-- In order to use partition elimination (generally something you want),\n-- create a view with OPENROWSET() instead:\n\nCREATE VIEW vInspection AS\nSELECT\n\tt.*,\n\tt.filepath(1) AS [Year],\n\tt.filepath(2) AS [Month]\nFROM OPENROWSET(\n\tBULK 'wakeinspections/refined/inspections/Year=*/Month=*/*.parquet',\n\tDATA_SOURCE = 'synapse_azdatapreconstoredev_dfs_core_windows_net',\n\tFORMAT='PARQUET'\n) AS t;\nGO\n\nSELECT TOP 100 *\nFROM dbo.vInspection;\nGO\n\nSELECT TOP 100 *\nFROM dbo.vInspection i\nWHERE\n\ti.Year = 2016\n\tAND i.Month = 6;\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -387,12 +324,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Create Inspections Table')]",
+			"name": "[concat(parameters('workspaceName'), '/S004 - Create Inspection Violations Table')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE Inspection (\n\t[HSISID] bigint,\n\t[Score] int,\n\t[Description] nvarchar(max),\n\t[Type] nvarchar(150),\n\t[Inspector] nvarchar(150),\n\t[InspectionDate] date,\n\t[PermitID] int,\n\t[RestaurantName] nvarchar(4000),\n\t[InspectionKey] nvarchar(100)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/inspections/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Inspection\nGO",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nIF NOT EXISTS(SELECT * FROM sys.external_tables WHERE name = 'InspectionViolation')\n\tCREATE EXTERNAL TABLE InspectionViolation (\n\t\t[HSISID] bigint,\n\t\t[ViolationKey] nvarchar(200),\n\t\t[Category] nvarchar(150),\n\t\t[Critical] nvarchar(10),\n\t\t[Severity] nvarchar(50),\n\t\t[InspectedBy] nvarchar(200),\n\t\t[Comments] nvarchar(max),\n\t\t[PointValue] int,\n\t\t[ObservationType] nvarchar(255),\n\t\t[ViolationType] nvarchar(255),\n\t\t[InspectionDate] date,\n\t\t[StateCode] nvarchar(75),\n\t\t[QuestionNo] nvarchar(4),\n\t\t[ViolationCode] nvarchar(125),\n\t\t[ShortDesc] nvarchar(300),\n\t\t[CDCDataItem] nvarchar(500),\n\t\t[PermitID] int,\n\t\t[RestaurantName] nvarchar(4000),\n\t\t[InspectionKey] nvarchar(100)\n\t\t)\n\t\tWITH (\n\t\tLOCATION = 'wakeinspections/refined/inspection_violations/**',\n\t\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\t\tFILE_FORMAT = [SynapseParquetFormat]\n\t\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.InspectionViolation\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -407,12 +344,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Create Restaurants Table')]",
+			"name": "[concat(parameters('workspaceName'), '/S005 - Query Inspections')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE Restaurant (\n\t[HSISID] bigint,\n\t[NAME] nvarchar(4000),\n\t[ADDRESS1] nvarchar(200),\n\t[ADDRESS2] nvarchar(200),\n\t[CITY] nvarchar(75),\n\t[STATE] nvarchar(20),\n\t[POSTALCODE] nvarchar(20),\n\t[PHONENUMBER] nvarchar(50),\n\t[RESTAURANTOPENDATE] date,\n\t[FACILITYTYPE] nvarchar(50),\n\t[PERMITID] int,\n\t[X] real,\n\t[Y] real,\n\t[GEOCODESTATUS] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/restaurants/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.Restaurant\nGO",
+					"query": "SELECT TOP 100 *\nFROM dbo.Inspection i\n    INNER JOIN dbo.Restaurant r\n        ON i.HSISID = r.HSISID\nWHERE\n    r.NAME LIKE N'%Chicken%';\nGO\n\n-- Dame's Chicken and Waffles\nSELECT TOP 100 *\nFROM dbo.Inspection i\nWHERE\n    i.HSISID = 4092017451\nORDER BY\n    InspectionDate ASC;\nGO\n\n-- Percentiles for Dame's Chicken and Waffles\nSELECT TOP(1)\n\ti.RestaurantName,\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM dbo.Inspection i\nWHERE\n    i.HSISID = 4092017451;\nGO\n\n-- Percentiles for all McDonald's locations\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM dbo.Inspection i\nWHERE\n    i.RestaurantName LIKE N'%McDonalds%' OR i.RestaurantName LIKE N'%McDonald''s%';\nGO\n\n-- Percentiles for all restaurants\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM dbo.Inspection i\nWHERE\n    -- Some restaurants don't have scores because they weren't graded.\n    Score > 0;\nGO\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -427,1522 +364,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Create Violation Codes Table')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'synapse_azdatapreconstoredev_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [synapse_azdatapreconstoredev_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE ViolationCode (\n\t[VIOLATIONKEY] nvarchar(200),\n\t[STATECODE] nvarchar(75),\n\t[QUESTIONNO] nvarchar(4),\n\t[VIOLATIONCODE] nvarchar(125),\n\t[SHORTDESC] nvarchar(300),\n\t[CDCDATAITEM] nvarchar(500)\n\t)\n\tWITH (\n\tLOCATION = 'wakeinspections/refined/violation_codes/**',\n\tDATA_SOURCE = [synapse_azdatapreconstoredev_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM dbo.ViolationCode\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "TestDB",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Create Refined Lake DB Tables')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "notebookrunner",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "56g",
-					"driverCores": 8,
-					"executorMemory": "56g",
-					"executorCores": 8,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "999c77b3-e854-4485-9a6d-0b73b9ae9045"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
-						"name": "notebookrunner",
-						"type": "Spark",
-						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 8,
-						"memory": 56
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\n",
-							"spark.sql(\"CREATE TABLE IF NOT EXISTS default.Inspections USING Parquet LOCATION 'https://azdatapreconstoredev.dfs.core.windows.net/synapse/wakeinspections/refined/inspections/**'\")"
-						],
-						"outputs": [],
-						"execution_count": 2
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							""
-						],
-						"outputs": [],
-						"execution_count": null
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Load Data')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "notebookrunner",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "56g",
-					"driverCores": 8,
-					"executorMemory": "56g",
-					"executorCores": 8,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "86b5175c-122e-4f76-8337-3be6e1a2e03e"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
-						"name": "notebookrunner",
-						"type": "Spark",
-						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 8,
-						"memory": 56
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"# Load Data into the Data Lake\r\n",
-							"\r\n",
-							"In this notebook, we will load Wake County, North Carolina food service inspection data.  We already have raw data in our data lake but we will take this opportunity to learn more about it and refine the data for downstream use.\r\n",
-							"\r\n",
-							"The first thing we will need to do is import everything in the `pyspark.sql.functions` namespace."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"from pyspark.sql.functions import *"
-						],
-						"outputs": [],
-						"execution_count": 5
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Food Inspections Data\r\n",
-							"\r\n",
-							"There are several files in our dataset.  The first one we will look at includes food inspections over the course of a decade.  At least once per year, each restaurant, food truck, mobile food vendor, meat market, and even elder care facilities and schools need to be inspected to ensure that they comply with State of North Carolina laws regarding food preparation and handling.  Then, each facility gets a numeric score.  For facilities open to the general public, they need to display this score in a prominent location. "
-						]
-					},
-					{
-						"cell_type": "code",
-						"source": [
-							"df = spark.read.format('csv') \\\r\n",
-							"        .option('header',True) \\\r\n",
-							"        .option('sep', ',') \\\r\n",
-							"        .option('multiLine', True) \\\r\n",
-							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
-						],
-						"outputs": [],
-						"execution_count": 32
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Using the `head()` function, we can get an idea of the first few rows of data."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 11
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"The `dtypes` attribute is built in and shows us the data types for each attribute on our DataFrame.  We can see that some of these attributes are not what we would have expected."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 48
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"An important paradigm when working with Spark DataFrames is the concept of **immutability**.  In other words, we don't modify data in a DataFrame (or its underlying Resilient Distributed Dataset).  Instead, we apply transformation functions to the data and generate a new result.  This allows us to create a new DataFrame with what we need, while still retaining the current DataFrame in the event that we need to start over or if some other user needs it still.\r\n",
-							"\r\n",
-							"The `withColumn()` function lets us replace an existing column or add a new column based on some functional operation.  In this case, we will convert the `DATE_` string into an `InspectionDate` and then break out the parts of inspection date, giving us year, month, and day.\r\n",
-							"\r\n",
-							"We can also use the `drop()` function to remove a column altogether from a DataFrame.\r\n",
-							"\r\n",
-							"Note that with Python, we need to use a backslash (`\\`) to indicate that our statement is not yet finished.  If we were using Scala, that backslash would not be necessary. "
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_date = df.withColumn(\"InspectionDate\", to_timestamp(col(\"DATE_\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
-							"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
-							"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
-							"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
-							"            .withColumn(\"Score\", col(\"SCORE\").cast('INT')) \\\r\n",
-							"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
-							"            .drop(\"DATE_\") \\\r\n",
-							"            .drop(\"PERMITID\") \\\r\n",
-							"            .drop(\"OBJECTID\")"
-						],
-						"outputs": [],
-						"execution_count": 33
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Now that we have made some modifications and created a new DataFrame, let's make sure that everything looks correct."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_date.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 56
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"We can also review the top ten rows and ensure that all is well."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_date.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 17
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Extending the Story:  Restaurants\r\n",
-							"\r\n",
-							"Each inspection has an `HSISID`, which represents the food service facility.  We'd like to learn more about those facilities and to do so, we can import some restaurant data for the purposes of lookup.  This is a set of restaurants in Wake County and is maintained by the same department which handles food service inspections. "
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest = spark.read.format('csv') \\\r\n",
-							"        .option('header',True) \\\r\n",
-							"        .option('sep', ',') \\\r\n",
-							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/restaurants/Restaurants_in_Wake_County.csv')"
-						],
-						"outputs": [],
-						"execution_count": 3
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Reviewing the top 10 restaurants, we can see what we have available."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 24
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Having reviewed our options, we can create a final restaurant DataFrame by reshaping some of the inputs."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest_final = rest.drop(\"OBJECTID\") \\\r\n",
-							"                .withColumn(\"RESTAURANTOPENDATE\", to_timestamp(col(\"RESTAURANTOPENDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
-							"                .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
-							"                .withColumn(\"PERMITID\", col(\"PERMITID\").cast('INT')) \\\r\n",
-							"                .withColumn(\"X\", col(\"X\").cast('FLOAT')) \\\r\n",
-							"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
-						],
-						"outputs": [],
-						"execution_count": 6
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Here is the structure of our restaurants DataFrame."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest_final.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 38
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"And here are the first few records of it."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 26
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Because we don't have any additional data to include here, we can write the restaurants to our `\\refined\\` folder.\r\n",
-							"\r\n",
-							"We will write the output data in Parquet format, ensuring that we retain data types, data lengths, and column names.  That way, downstream users will automatically get the fruits of our labor here."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"rest_final.write \\\r\n",
-							"          .mode(\"overwrite\") \\\r\n",
-							"          .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/')"
-						],
-						"outputs": [],
-						"execution_count": 41
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Violation Codes\r\n",
-							"\r\n",
-							"Almost every inspection will include at least one violation.  This violation codes table represents a lookup table of the various violation codes in our dataset."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"vc = spark.read.format('csv') \\\r\n",
-							"        .option('header',True) \\\r\n",
-							"        .option('sep', ',') \\\r\n",
-							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/violation_codes/Violation_Code.csv')"
-						],
-						"outputs": [],
-						"execution_count": 7
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"vc.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 44
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"vc.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 45
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"This data is already in reasonable condition, so we can write it directly to the `\\refined\\` directory without any additional work."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"vc.write \\\r\n",
-							"  .mode(\"overwrite\") \\\r\n",
-							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/violation_codes/')"
-						],
-						"outputs": [],
-						"execution_count": 46
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Enhancing Inspections\r\n",
-							"\r\n",
-							"As a quick reminder, here is what we have on the inspections DataFrame."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_date.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 57
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"We can see an `HSISID`, which we know ties to the food service facility.  Using the `join()` function, we can join our inspection data to the restaurants DataFrame.  Note that we perform a left outer join here, as we don't know for sure that every inspection ties to a restaurant in the current dataset--it is possible that some restaurants do not show up in the dataset for whatever reason."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_inspections = df_date.join(rest_final, ['HSISID'], \"left\")"
-						],
-						"outputs": [],
-						"execution_count": 34
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"The process of joining brings together the full set of attributes from both sides, making this a bit different from a classic SQL join operation."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_inspections.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 35
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Let's narrow down the set of columns.  We'll keep restaurant name and permit ID from the restaurants DataFrame but drop most of the rest.  Also, we will change the casing on several columns and create a new column called `InspectionKey`, which gives us a unique identifier for an inspection.  We use `concat_ws()` (concatenate with separator) to create a key based on the facility ID and the date of inspection, with each ID or date part separated by underscores."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_inspectionsfinal = df_inspections \\\r\n",
-							"                        .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
-							"                        .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
-							"                        .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
-							"                        .withColumn(\"Description\", col(\"DESCRIPTION\")) \\\r\n",
-							"                        .withColumn(\"Type\", col(\"TYPE\")) \\\r\n",
-							"                        .withColumn(\"Inspector\", col(\"INSPECTOR\")) \\\r\n",
-							"                        .drop(\"NAME\") \\\r\n",
-							"                        .drop(\"ADDRESS1\") \\\r\n",
-							"                        .drop(\"ADDRESS2\") \\\r\n",
-							"                        .drop(\"CITY\") \\\r\n",
-							"                        .drop(\"STATE\") \\\r\n",
-							"                        .drop(\"POSTALCODE\") \\\r\n",
-							"                        .drop(\"PHONENUMBER\") \\\r\n",
-							"                        .drop(\"RESTAURANTOPENDATE\") \\\r\n",
-							"                        .drop(\"FACILITYTYPE\") \\\r\n",
-							"                        .drop(\"X\") \\\r\n",
-							"                        .drop(\"Y\") \\\r\n",
-							"                        .drop(\"GEOCODESTATUS\")\r\n",
-							""
-						],
-						"outputs": [],
-						"execution_count": 36
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Here is what our inspections data looks like now."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_inspectionsfinal.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 37
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"With this in place, we can call our refining process complete and will write out data.  Note that we partition this by year and month, so in the `\\refined\\inspections\\` folder, we will be able to drill into each year and month, so for example, `\\refined\\inspections\\2018\\04\\` would include all restaurant inspections for April of 2018."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_inspectionsfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
-							"  .mode(\"overwrite\") \\\r\n",
-							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
-						],
-						"outputs": [],
-						"execution_count": 38
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Inspection Violations\r\n",
-							"\r\n",
-							"The actual inspection violations are in a different file from the inspections themselves and there is a one to zero or more relationship between inspections and violations.  Typically, this relationship is one to many."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_iv = spark.read.format('csv') \\\r\n",
-							"        .option('header',True) \\\r\n",
-							"        .option('sep', ',') \\\r\n",
-							"        .option('multiLine', True) \\\r\n",
-							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspection_violations/Food_Inspection_Violations.csv')"
-						],
-						"outputs": [],
-						"execution_count": 39
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Here is the shape of the inspection data as it comes in."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_iv.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 9
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Based on our experience with other datasets, we can already perform some operations, like creating an inspection date, casting different attributes to known data types, and dropping other columns.  We will drop everything associated with the violation code here."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivkey = df_iv \\\r\n",
-							"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
-							"            .withColumn(\"InspectionDate\", to_timestamp(col(\"INSPECTDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
-							"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
-							"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
-							"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
-							"            .withColumn(\"POINTVALUE\", col(\"POINTVALUE\").cast('INT')) \\\r\n",
-							"            .withColumn(\"VIOLATIONKEY\", concat_ws(\"_\", col(\"STATECODE\"), col(\"QUESTIONNO\"), col(\"VIOLATIONCODE\"))) \\\r\n",
-							"            .drop(\"OBJECTID\") \\\r\n",
-							"            .drop(\"INSPECTDATE\") \\\r\n",
-							"            .drop(\"PERMITID\") \\\r\n",
-							"            .drop(\"STATECODE\") \\\r\n",
-							"            .drop(\"QUESTIONNO\") \\\r\n",
-							"            .drop(\"VIOLATIONCODE\") \\\r\n",
-							"            .drop(\"CDCRISKFACTOR\") \\\r\n",
-							"            .drop(\"SHORTDESC\") \\\r\n",
-							"            .drop(\"CDCDATAITEM\")"
-						],
-						"outputs": [],
-						"execution_count": 40
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivkey.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 20
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"We can perform multiple joins, bringing together data from several tables.  In this case, we drive from inspection violations and perform left outer joints on violation code (`vc`) and restaurants (`rest_final`) based on their key columns."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivjoin = df_ivkey.join(vc, ['VIOLATIONKEY'], \"left\").join(rest_final, ['HSISID'], \"left\")"
-						],
-						"outputs": [],
-						"execution_count": 41
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Now let's look at what we've done."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivjoin.head(10)"
-						],
-						"outputs": [],
-						"execution_count": 22
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivjoin.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 42
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"The end result is that we have a large number of columns.  Therefore, we'll want to prune them down and include only the columns we intend to keep."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivfinal = df_ivjoin \\\r\n",
-							"                .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
-							"                .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
-							"                .withColumn(\"ViolationKey\", col(\"VIOLATIONKEY\")) \\\r\n",
-							"                .withColumn(\"Critical\", col(\"CRITICAL\")) \\\r\n",
-							"                .withColumn(\"Category\", col(\"CATEGORY\")) \\\r\n",
-							"                .withColumn(\"Severity\", col(\"SEVERITY\")) \\\r\n",
-							"                .withColumn(\"InspectedBy\", col(\"INSPECTEDBY\")) \\\r\n",
-							"                .withColumn(\"Comments\", col(\"COMMENTS\")) \\\r\n",
-							"                .withColumn(\"PointValue\", col(\"POINTVALUE\")) \\\r\n",
-							"                .withColumn(\"ObservationType\", col(\"OBSERVATIONTYPE\")) \\\r\n",
-							"                .withColumn(\"ViolationType\", col(\"VIOLATIONTYPE\")) \\\r\n",
-							"                .withColumn(\"StateCode\", col(\"STATECODE\")) \\\r\n",
-							"                .withColumn(\"QuestionNo\", col(\"QUESTIONNO\")) \\\r\n",
-							"                .withColumn(\"ViolationCode\", col(\"VIOLATIONCODE\")) \\\r\n",
-							"                .withColumn(\"ShortDesc\", col(\"SHORTDESC\")) \\\r\n",
-							"                .withColumn(\"CDCDataItem\", col(\"CDCDATAITEM\")) \\\r\n",
-							"                .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
-							"                .drop(\"NAME\") \\\r\n",
-							"                .drop(\"ADDRESS1\") \\\r\n",
-							"                .drop(\"ADDRESS2\") \\\r\n",
-							"                .drop(\"CITY\") \\\r\n",
-							"                .drop(\"STATE\") \\\r\n",
-							"                .drop(\"POSTALCODE\") \\\r\n",
-							"                .drop(\"PHONENUMBER\") \\\r\n",
-							"                .drop(\"RESTAURANTOPENDATE\") \\\r\n",
-							"                .drop(\"FACILITYTYPE\") \\\r\n",
-							"                .drop(\"X\") \\\r\n",
-							"                .drop(\"Y\") \\\r\n",
-							"                .drop(\"GEOCODESTATUS\")\r\n",
-							""
-						],
-						"outputs": [],
-						"execution_count": 43
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivfinal.dtypes"
-						],
-						"outputs": [],
-						"execution_count": 45
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"Similarly to inspections, we want to get inspection violations by month and write them into the `\\refined\\` folder."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"df_ivfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
-							"  .mode(\"overwrite\") \\\r\n",
-							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspection_violations/')"
-						],
-						"outputs": [],
-						"execution_count": 46
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							""
-						],
-						"outputs": [],
-						"execution_count": null
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Spark Config Test')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "notebookrunner",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "56g",
-					"driverCores": 8,
-					"executorMemory": "56g",
-					"executorCores": 8,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "9d1f2569-ec2d-48cc-bf05-f5622cb28846"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
-						"name": "notebookrunner",
-						"type": "Spark",
-						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 8,
-						"memory": 56,
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"# Spark Config Test\r\n",
-							"\r\n",
-							"This is a test of a simple notebook which logs data to Log Analytics.  We specify the logger name as `azdata-precon-dev` though we can choose whatever we'd like here.  It would be a good idea to use the name of your application in this space, so you can filter by application name in Log Analytics.\r\n",
-							"\r\n",
-							"From there, we call `logger.info()` to write out two messages, one which is simple text and the other which is slightly more complex JSON."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {},
-						"source": [
-							"spark_log4j = sc._jvm.org.apache.log4j\r\n",
-							"logger = spark_log4j.LogManager.getLogger(\"azdata-precon-dev\")\r\n",
-							"\r\n",
-							"logger.info(\"Test simple log message\")\r\n",
-							"\r\n",
-							"import json\r\n",
-							"msg = {\r\n",
-							"    \"message\":\"Test simple log message\", \r\n",
-							"    \"notebook\": \"Spark Config Test\", \r\n",
-							"    \"source_data\": \"Wherever I get data\", \r\n",
-							"    \"destination_data\": \"Wherever I want to send it\"\r\n",
-							"}\r\n",
-							"logger.info(json.dumps(msg))"
-						],
-						"outputs": [],
-						"execution_count": 1
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							""
-						],
-						"outputs": [],
-						"execution_count": null
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Test Custom Code')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "notebookrunner",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "56g",
-					"driverCores": 8,
-					"executorMemory": "56g",
-					"executorCores": 8,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "dcec476b-264f-4482-9795-35be21251dfd"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
-						"name": "notebookrunner",
-						"type": "Spark",
-						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 8,
-						"memory": 56
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"# Testing Custom Code\r\n",
-							"\r\n",
-							"After we import a package, we can import it here.  One important thing to note here is that we want to keep the names of packages and folders consistent.  Note that we need to bring in the `custompkg` namespace even though the wheel file is called `operations`."
-						]
-					},
-					{
-						"cell_type": "code",
-						"source": [
-							"from custompkg import add_numbers\r\n",
-							"\r\n",
-							"res = add_numbers(8, 6)"
-						],
-						"outputs": [],
-						"execution_count": 8
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"res"
-						],
-						"outputs": [],
-						"execution_count": 9
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							""
-						],
-						"outputs": [],
-						"execution_count": null
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/The Basics of Python')]",
+			"name": "[concat(parameters('workspaceName'), '/N001 - The Basics of Python')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1958,7 +380,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "6d9b360d-6de8-453e-8742-b900a5f533b0"
+						"spark.autotune.trackingId": "545d203d-83fa-4c2e-8529-6183df24565c"
 					}
 				},
 				"metadata": {
@@ -2397,6 +819,1795 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/N002 - Test Custom Code')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "85e8fef2-0e97-40bb-85b6-594ef48b26f4"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Testing Custom Code\r\n",
+							"\r\n",
+							"After we import a package, we can import it here.  One important thing to note here is that we want to keep the names of packages and folders consistent.  Note that we need to bring in the `custompkg` namespace even though the wheel file is called `operations`."
+						]
+					},
+					{
+						"cell_type": "code",
+						"source": [
+							"from custompkg import add_numbers\r\n",
+							"\r\n",
+							"res = add_numbers(8, 6)"
+						],
+						"outputs": [],
+						"execution_count": 8
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"res"
+						],
+						"outputs": [],
+						"execution_count": 9
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/N003 - Load Data')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "1a92217d-1d3b-47e3-be2d-75c0b928968b"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Load Data into the Data Lake\r\n",
+							"\r\n",
+							"In this notebook, we will load Wake County, North Carolina food service inspection data.  We already have raw data in our data lake but we will take this opportunity to learn more about it and refine the data for downstream use.\r\n",
+							"\r\n",
+							"The first thing we will need to do is import everything in the `pyspark.sql.functions` namespace."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"from pyspark.sql.functions import *"
+						],
+						"outputs": [],
+						"execution_count": 20
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Food Inspections Data\r\n",
+							"\r\n",
+							"There are several files in our dataset.  The first one we will look at includes food inspections over the course of a decade.  At least once per year, each restaurant, food truck, mobile food vendor, meat market, and even elder care facilities and schools need to be inspected to ensure that they comply with State of North Carolina laws regarding food preparation and handling.  Then, each facility gets a numeric score.  For facilities open to the general public, they need to display this score in a prominent location. "
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"df = spark.read.format('csv') \\\r\n",
+							"        .option('header',True) \\\r\n",
+							"        .option('sep', ',') \\\r\n",
+							"        .option('quote', '\\\"') \\\r\n",
+							"        .option('escape', '\\\"') \\\r\n",
+							"        .option('multiLine', True) \\\r\n",
+							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
+						],
+						"outputs": [],
+						"execution_count": 21
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Using the `head()` function, we can get an idea of the first few rows of data."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 22
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"The `dtypes` attribute is built in and shows us the data types for each attribute on our DataFrame.  We can see that some of these attributes are not what we would have expected."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 23
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"An easy data quality check when we are importing CSV data is to make sure that we don't have delimiter leakage, such as cases when we have a string like \"This is something, but is it really?\" which should be in one column.\r\n",
+							"\r\n",
+							"We'll use the maximum length of each column as a quick indicator of whether the Description field ended up expanding beyond one column.  Type and Inspector should both be short columns, as they represent the inspection type (Inspection, Reinspection, etc.) and inspector's name, respectively."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_len = df.select([length(col).alias(col) for col in df.columns])\r\n",
+							"df_len.groupby().max().show()"
+						],
+						"outputs": [],
+						"execution_count": 24
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"An important paradigm when working with Spark DataFrames is the concept of **immutability**.  In other words, we don't modify data in a DataFrame (or its underlying Resilient Distributed Dataset).  Instead, we apply transformation functions to the data and generate a new result.  This allows us to create a new DataFrame with what we need, while still retaining the current DataFrame in the event that we need to start over or if some other user needs it still.\r\n",
+							"\r\n",
+							"The `withColumn()` function lets us replace an existing column or add a new column based on some functional operation.  In this case, we will convert the `DATE_` string into an `InspectionDate` and then break out the parts of inspection date, giving us year, month, and day.\r\n",
+							"\r\n",
+							"We can also use the `drop()` function to remove a column altogether from a DataFrame.\r\n",
+							"\r\n",
+							"Note that with Python, we need to use a backslash (`\\`) to indicate that our statement is not yet finished.  If we were using Scala, that backslash would not be necessary. "
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_date = df.withColumn(\"InspectionDate\", to_timestamp(col(\"DATE_\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+							"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
+							"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
+							"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
+							"            .withColumn(\"Score\", col(\"SCORE\").cast('INT')) \\\r\n",
+							"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+							"            .drop(\"DATE_\") \\\r\n",
+							"            .drop(\"PERMITID\") \\\r\n",
+							"            .drop(\"OBJECTID\")"
+						],
+						"outputs": [],
+						"execution_count": 25
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Now that we have made some modifications and created a new DataFrame, let's make sure that everything looks correct."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_date.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 26
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We can also review the top ten rows and ensure that all is well."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_date.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 27
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Extending the Story:  Restaurants\r\n",
+							"\r\n",
+							"Each inspection has an `HSISID`, which represents the food service facility.  We'd like to learn more about those facilities and to do so, we can import some restaurant data for the purposes of lookup.  This is a set of restaurants in Wake County and is maintained by the same department which handles food service inspections. "
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest = spark.read.format('csv') \\\r\n",
+							"        .option('header',True) \\\r\n",
+							"        .option('sep', ',') \\\r\n",
+							"        .option('quote', '\\\"') \\\r\n",
+							"        .option('escape', '\\\"') \\\r\n",
+							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/restaurants/Restaurants_in_Wake_County.csv')"
+						],
+						"outputs": [],
+						"execution_count": 28
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Reviewing the top 10 restaurants, we can see what we have available."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 29
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest_len = rest.select([length(col).alias(col) for col in rest.columns])\r\n",
+							"rest_len.groupby().max().show()"
+						],
+						"outputs": [],
+						"execution_count": 30
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Having reviewed our options, we can create a final restaurant DataFrame by reshaping some of the inputs."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest_final = rest.drop(\"OBJECTID\") \\\r\n",
+							"                .withColumn(\"RESTAURANTOPENDATE\", to_timestamp(col(\"RESTAURANTOPENDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+							"                .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+							"                .withColumn(\"PERMITID\", col(\"PERMITID\").cast('INT')) \\\r\n",
+							"                .withColumn(\"X\", col(\"X\").cast('FLOAT')) \\\r\n",
+							"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
+						],
+						"outputs": [],
+						"execution_count": 31
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Here is the structure of our restaurants DataFrame."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest_final.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 38
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"And here are the first few records of it."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 26
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Because we don't have any additional data to include here, we can write the restaurants to our `\\refined\\` folder.\r\n",
+							"\r\n",
+							"We will write the output data in Parquet format, ensuring that we retain data types, data lengths, and column names.  That way, downstream users will automatically get the fruits of our labor here."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"rest_final.write \\\r\n",
+							"          .mode(\"overwrite\") \\\r\n",
+							"          .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/')"
+						],
+						"outputs": [],
+						"execution_count": 32
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Violation Codes\r\n",
+							"\r\n",
+							"Almost every inspection will include at least one violation.  This violation codes table represents a lookup table of the various violation codes in our dataset."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"vc = spark.read.format('csv') \\\r\n",
+							"        .option('header',True) \\\r\n",
+							"        .option('sep', ',') \\\r\n",
+							"        .option('quote', '\\\"') \\\r\n",
+							"        .option('escape', '\\\"') \\\r\n",
+							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/violation_codes/Violation_Code.csv')"
+						],
+						"outputs": [],
+						"execution_count": 33
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"vc.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 44
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"vc.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 34
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"vc_len = vc.select([length(col).alias(col) for col in vc.columns])\r\n",
+							"vc_len.groupby().max().show()"
+						],
+						"outputs": [],
+						"execution_count": 35
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"This data is already in reasonable condition, so we can write it directly to the `\\refined\\` directory without any additional work."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"vc.write \\\r\n",
+							"  .mode(\"overwrite\") \\\r\n",
+							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/violation_codes/')"
+						],
+						"outputs": [],
+						"execution_count": 36
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Enhancing Inspections\r\n",
+							"\r\n",
+							"As a quick reminder, here is what we have on the inspections DataFrame."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_date.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 57
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We can see an `HSISID`, which we know ties to the food service facility.  Using the `join()` function, we can join our inspection data to the restaurants DataFrame.  Note that we perform a left outer join here, as we don't know for sure that every inspection ties to a restaurant in the current dataset--it is possible that some restaurants do not show up in the dataset for whatever reason."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_inspections = df_date.join(rest_final, ['HSISID'], \"left\")"
+						],
+						"outputs": [],
+						"execution_count": 37
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"The process of joining brings together the full set of attributes from both sides, making this a bit different from a classic SQL join operation."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_inspections.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 35
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Let's narrow down the set of columns.  We'll keep restaurant name and permit ID from the restaurants DataFrame but drop most of the rest.  Also, we will change the casing on several columns and create a new column called `InspectionKey`, which gives us a unique identifier for an inspection.  We use `concat_ws()` (concatenate with separator) to create a key based on the facility ID and the date of inspection, with each ID or date part separated by underscores."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_inspectionsfinal = df_inspections \\\r\n",
+							"                        .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
+							"                        .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
+							"                        .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
+							"                        .withColumn(\"Description\", col(\"DESCRIPTION\")) \\\r\n",
+							"                        .withColumn(\"Type\", col(\"TYPE\")) \\\r\n",
+							"                        .withColumn(\"Inspector\", col(\"INSPECTOR\")) \\\r\n",
+							"                        .drop(\"NAME\") \\\r\n",
+							"                        .drop(\"ADDRESS1\") \\\r\n",
+							"                        .drop(\"ADDRESS2\") \\\r\n",
+							"                        .drop(\"CITY\") \\\r\n",
+							"                        .drop(\"STATE\") \\\r\n",
+							"                        .drop(\"POSTALCODE\") \\\r\n",
+							"                        .drop(\"PHONENUMBER\") \\\r\n",
+							"                        .drop(\"RESTAURANTOPENDATE\") \\\r\n",
+							"                        .drop(\"FACILITYTYPE\") \\\r\n",
+							"                        .drop(\"X\") \\\r\n",
+							"                        .drop(\"Y\") \\\r\n",
+							"                        .drop(\"GEOCODESTATUS\")\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 38
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Here is what our inspections data looks like now."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_inspectionsfinal.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 37
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"With this in place, we can call our refining process complete and will write out data.  Note that we partition this by year and month, so in the `\\refined\\inspections\\` folder, we will be able to drill into each year and month, so for example, `\\refined\\inspections\\2018\\04\\` would include all restaurant inspections for April of 2018."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_inspectionsfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
+							"  .mode(\"overwrite\") \\\r\n",
+							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
+						],
+						"outputs": [],
+						"execution_count": 39
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Inspection Violations\r\n",
+							"\r\n",
+							"The actual inspection violations are in a different file from the inspections themselves and there is a one to zero or more relationship between inspections and violations.  Typically, this relationship is one to many."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_iv = spark.read.format('csv') \\\r\n",
+							"        .option('header',True) \\\r\n",
+							"        .option('sep', ',') \\\r\n",
+							"        .option('quote', '\\\"') \\\r\n",
+							"        .option('escape', '\\\"') \\\r\n",
+							"        .option('multiLine', True) \\\r\n",
+							"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspection_violations/Food_Inspection_Violations.csv')"
+						],
+						"outputs": [],
+						"execution_count": 40
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Here is the shape of the inspection data as it comes in."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_iv.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 9
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_iv_len = df_iv.select([length(col).alias(col) for col in df_iv.columns])\r\n",
+							"df_iv_len.groupby().max().show()"
+						],
+						"outputs": [],
+						"execution_count": 41
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Based on our experience with other datasets, we can already perform some operations, like creating an inspection date, casting different attributes to known data types, and dropping other columns.  We will drop everything associated with the violation code here."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivkey = df_iv \\\r\n",
+							"            .withColumn(\"HSISID\", col(\"HSISID\").cast('LONG')) \\\r\n",
+							"            .withColumn(\"InspectionDate\", to_timestamp(col(\"INSPECTDATE\"), 'yyyy/MM/dd HH:mm:ss+00')) \\\r\n",
+							"            .withColumn(\"Year\", date_format(col(\"InspectionDate\"), \"yyyy\")) \\\r\n",
+							"            .withColumn(\"Month\", date_format(col(\"InspectionDate\"), \"MM\")) \\\r\n",
+							"            .withColumn(\"Day\", date_format(col(\"InspectionDate\"), \"dd\")) \\\r\n",
+							"            .withColumn(\"POINTVALUE\", col(\"POINTVALUE\").cast('INT')) \\\r\n",
+							"            .withColumn(\"VIOLATIONKEY\", concat_ws(\"_\", col(\"STATECODE\"), col(\"QUESTIONNO\"), col(\"VIOLATIONCODE\"))) \\\r\n",
+							"            .drop(\"OBJECTID\") \\\r\n",
+							"            .drop(\"INSPECTDATE\") \\\r\n",
+							"            .drop(\"PERMITID\") \\\r\n",
+							"            .drop(\"STATECODE\") \\\r\n",
+							"            .drop(\"QUESTIONNO\") \\\r\n",
+							"            .drop(\"VIOLATIONCODE\") \\\r\n",
+							"            .drop(\"CDCRISKFACTOR\") \\\r\n",
+							"            .drop(\"SHORTDESC\") \\\r\n",
+							"            .drop(\"CDCDATAITEM\")"
+						],
+						"outputs": [],
+						"execution_count": 42
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivkey.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 20
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We can perform multiple joins, bringing together data from several tables.  In this case, we drive from inspection violations and perform left outer joints on violation code (`vc`) and restaurants (`rest_final`) based on their key columns."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivjoin = df_ivkey.join(vc, ['VIOLATIONKEY'], \"left\").join(rest_final, ['HSISID'], \"left\")"
+						],
+						"outputs": [],
+						"execution_count": 43
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Now let's look at what we've done."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivjoin.head(10)"
+						],
+						"outputs": [],
+						"execution_count": 22
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivjoin.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 42
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"The end result is that we have a large number of columns.  Therefore, we'll want to prune them down and include only the columns we intend to keep."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivfinal = df_ivjoin \\\r\n",
+							"                .withColumn(\"RestaurantName\", col(\"NAME\")) \\\r\n",
+							"                .withColumn(\"PermitID\", col(\"PERMITID\")) \\\r\n",
+							"                .withColumn(\"ViolationKey\", col(\"VIOLATIONKEY\")) \\\r\n",
+							"                .withColumn(\"Critical\", col(\"CRITICAL\")) \\\r\n",
+							"                .withColumn(\"Category\", col(\"CATEGORY\")) \\\r\n",
+							"                .withColumn(\"Severity\", col(\"SEVERITY\")) \\\r\n",
+							"                .withColumn(\"InspectedBy\", col(\"INSPECTEDBY\")) \\\r\n",
+							"                .withColumn(\"Comments\", col(\"COMMENTS\")) \\\r\n",
+							"                .withColumn(\"PointValue\", col(\"POINTVALUE\")) \\\r\n",
+							"                .withColumn(\"ObservationType\", col(\"OBSERVATIONTYPE\")) \\\r\n",
+							"                .withColumn(\"ViolationType\", col(\"VIOLATIONTYPE\")) \\\r\n",
+							"                .withColumn(\"StateCode\", col(\"STATECODE\")) \\\r\n",
+							"                .withColumn(\"QuestionNo\", col(\"QUESTIONNO\")) \\\r\n",
+							"                .withColumn(\"ViolationCode\", col(\"VIOLATIONCODE\")) \\\r\n",
+							"                .withColumn(\"ShortDesc\", col(\"SHORTDESC\")) \\\r\n",
+							"                .withColumn(\"CDCDataItem\", col(\"CDCDATAITEM\")) \\\r\n",
+							"                .withColumn(\"InspectionKey\", concat_ws(\"_\", col(\"HSISID\"), col(\"Year\"), col(\"Month\"), col(\"Day\"))) \\\r\n",
+							"                .drop(\"NAME\") \\\r\n",
+							"                .drop(\"ADDRESS1\") \\\r\n",
+							"                .drop(\"ADDRESS2\") \\\r\n",
+							"                .drop(\"CITY\") \\\r\n",
+							"                .drop(\"STATE\") \\\r\n",
+							"                .drop(\"POSTALCODE\") \\\r\n",
+							"                .drop(\"PHONENUMBER\") \\\r\n",
+							"                .drop(\"RESTAURANTOPENDATE\") \\\r\n",
+							"                .drop(\"FACILITYTYPE\") \\\r\n",
+							"                .drop(\"X\") \\\r\n",
+							"                .drop(\"Y\") \\\r\n",
+							"                .drop(\"GEOCODESTATUS\")\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 44
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivfinal.dtypes"
+						],
+						"outputs": [],
+						"execution_count": 45
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Similarly to inspections, we want to get inspection violations by month and write them into the `\\refined\\` folder."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df_ivfinal.write.partitionBy(\"Year\", \"Month\") \\\r\n",
+							"  .mode(\"overwrite\") \\\r\n",
+							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspection_violations/')"
+						],
+						"outputs": [],
+						"execution_count": 45
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/N004 - Create Refined Lake DB Tables')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "f28b8ecc-57e2-43fd-b894-2aba1b7428d6"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Create Lake Database Tables\r\n",
+							"\r\n",
+							"A lake database is a construct in Azure Synapse Analytics which allows you to create tables based on existing data lake folders.  You can work with these tables as though they were normal tables, including data insertion, deletion, or updates.  In addition, you can query data in these tables from Spark pools or from the serverless SQL pool.\r\n",
+							"\r\n",
+							"You must create a lake database from Spark or from the **Data** tab."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"\r\n",
+							"CREATE DATABASE inspection_lake"
+						],
+						"outputs": [],
+						"execution_count": 23
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Once you have created a database, you can create tables.  Here is the SQL syntax:"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"DROP TABLE IF EXISTS inspection_lake.Restaurants;\r\n",
+							"CREATE TABLE IF NOT EXISTS inspection_lake.Restaurants\r\n",
+							"USING Parquet\r\n",
+							"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/*.parquet'"
+						],
+						"outputs": [],
+						"execution_count": 97
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"For partitioned tables like `Inspections`, we need to specify the partition strategy here, though unfortunately, we won't be able to take advantage of it in queries."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"DROP TABLE IF EXISTS inspection_lake.Inspections;\r\n",
+							"CREATE TABLE IF NOT EXISTS inspection_lake.Inspections\r\n",
+							"(\r\n",
+							"    HSISID BIGINT,\r\n",
+							"    Score INT,\r\n",
+							"    DESCRIPTION STRING,\r\n",
+							"    Type STRING,\r\n",
+							"    Inspector STRING,\r\n",
+							"    InspectionDate TIMESTAMP,\r\n",
+							"    PermitID INT,\r\n",
+							"    RestaurantName STRING,\r\n",
+							"    InspectionKey STRING\r\n",
+							")\r\n",
+							"USING Parquet\r\n",
+							"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/Year=*/Month=*/*.parquet'\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 92
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We can query lake database tables either via PySpark (`spark.sql(\"SELECT ...\")`) or via the SQL magic syntax below."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT *\r\n",
+							"FROM inspection_lake.Inspections\r\n",
+							"WHERE\r\n",
+							"    RestaurantName LIKE '%Tropical Picken Chicken%'\r\n",
+							"ORDER BY\r\n",
+							"    InspectionDate DESC\r\n",
+							"LIMIT 100;"
+						],
+						"outputs": [],
+						"execution_count": 99
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"\r\n",
+							"SELECT *\r\n",
+							"FROM inspection_lake.Restaurants\r\n",
+							"LIMIT 20;"
+						],
+						"outputs": [],
+						"execution_count": 33
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Spark Config Test')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "5d9abf62-c35d-451c-a71b-6c67a26dde2d"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Spark Config Test\r\n",
+							"\r\n",
+							"This is a test of a simple notebook which logs data to Log Analytics.  We specify the logger name as `azdata-precon-dev` though we can choose whatever we'd like here.  It would be a good idea to use the name of your application in this space, so you can filter by application name in Log Analytics.\r\n",
+							"\r\n",
+							"From there, we call `logger.info()` to write out two messages, one which is simple text and the other which is slightly more complex JSON."
+						]
+					},
+					{
+						"cell_type": "code",
+						"source": [
+							"spark_log4j = sc._jvm.org.apache.log4j\r\n",
+							"logger = spark_log4j.LogManager.getLogger(\"azdata-precon-dev\")\r\n",
+							"\r\n",
+							"logger.info(\"Test simple log message\")\r\n",
+							"\r\n",
+							"import json\r\n",
+							"msg = {\r\n",
+							"    \"message\":\"Test simple log message\", \r\n",
+							"    \"notebook\": \"Spark Config Test\", \r\n",
+							"    \"source_data\": \"Wherever I get data\", \r\n",
+							"    \"destination_data\": \"Wherever I want to send it\"\r\n",
+							"}\r\n",
+							"logger.info(json.dumps(msg))"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/synapse-spark-config')]",
 			"type": "Microsoft.Synapse/workspaces/sparkConfigurations",
 			"apiVersion": "2019-06-01-preview",
@@ -2441,21 +2652,326 @@
 				"libraryRequirements": {
 					"content": "benford_py",
 					"filename": "requirements.txt",
-					"time": "2022-11-12T19:33:06.9493381Z"
+					"time": "2022-11-26T14:12:52.2021433Z"
 				},
 				"isComputeIsolationEnabled": false,
 				"sparkConfigProperties": {
 					"configurationType": "Artifact",
 					"filename": "synapse-spark-config",
 					"content": "{\"name\":\"synapse-spark-config\",\"properties\":{\"configs\":{\"spark.synapse.logAnalytics.enabled\":\"true\",\"spark.synapse.logAnalytics.workspaceId\":\"fc261f87-42dc-4a20-9da9-da133ba9c6d8\",\"spark.synapse.logAnalytics.keyVault.name\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"vacctkv\",\"spark.synapse.logAnalytics.keyVault.key.secret\":\"log-analytics-secret-key\"},\"annotations\":[],\"type\":\"Microsoft.Synapse/workspaces/sparkconfigurations\",\"description\":\"\",\"notes\":\"\",\"created\":\"2022-11-02T12:59:15.5540000-04:00\",\"createdBy\":\"feaselkl@gmail.com\",\"configMergeRule\":{\"admin.currentOperation.spark.synapse.logAnalytics.enabled\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.workspaceId\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.name\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.linkedServiceName\":\"replace\",\"admin.currentOperation.spark.synapse.logAnalytics.keyVault.key.secret\":\"replace\"}}}",
-					"time": "2022-11-12T19:33:06.9493381Z"
+					"time": "2022-11-26T14:12:52.2021433Z"
 				},
 				"sessionLevelPackagesEnabled": false,
-				"customLibraries": [],
+				"customLibraries": [
+					{
+						"name": "operations-0.0.1-py3-none-any.whl",
+						"path": "azdata-precon-dev/libraries/operations-0.0.1-py3-none-any.whl",
+						"containerName": "prep",
+						"uploadedTimestamp": "0001-01-01T00:00:00+00:00",
+						"type": "whl"
+					}
+				],
 				"annotations": []
 			},
 			"dependsOn": [],
 			"location": "eastus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/S006 - Query Inspection Lake')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- Be sure to run this from the inspection_lake database!\nUSE inspection_lake\n\nSELECT TOP 100 *\nFROM Inspections i\n    INNER JOIN Restaurants r\n        ON i.HSISID = r.HSISID\nWHERE\n    r.NAME LIKE N'%Chicken%';\nGO\n\n-- Dame's Chicken and Waffles\nSELECT TOP 100 *\nFROM Inspections i\nWHERE\n    i.HSISID = 4092017451\nORDER BY\n    InspectionDate ASC;\nGO\n\n-- Percentiles for Dame's Chicken and Waffles\nSELECT TOP(1)\n\ti.RestaurantName,\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    i.HSISID = 4092017451;\nGO\n\n-- Percentiles for all McDonald's locations\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    i.RestaurantName LIKE N'%McDonalds%' OR i.RestaurantName LIKE N'%McDonald''s%';\nGO\n\n-- Percentiles for all restaurants\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    -- Some restaurants don't have scores because they weren't graded.\n    Score > 0;\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "inspection_lake",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/N005 - Curate Inspections')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "notebookrunner",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "8a2d346c-e65a-4f43-92f8-b26501e10a8d"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+						"name": "notebookrunner",
+						"type": "Spark",
+						"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 8,
+						"memory": 56,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Curate Inspections\r\n",
+							"\r\n",
+							"In this notebook, we will create a curated table which aggregates some inspection details in an easy-to-consume format for a reporting tool.\r\n",
+							"\r\n",
+							"We are using `DISTINCT` instead of `GROUP BY` here because we have several window functions."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"df = spark.sql(\"\"\"\r\n",
+							"SELECT DISTINCT\r\n",
+							"\tr.FacilityType,\r\n",
+							"\tr.City,\r\n",
+							"\ti.Inspector,\r\n",
+							"\tDATE_TRUNC('month', i.InspectionDate) AS InspectionMonth,\r\n",
+							"    COUNT(*) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS NumberOfRecords,\r\n",
+							"    PERCENTILE (Score,0.0) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS Min,\r\n",
+							"\tPERCENTILE (Score,0.25) OVER () AS LowerQuartile,\r\n",
+							"\tPERCENTILE (Score,0.5) OVER () AS Median,\r\n",
+							"\tAVG(Score) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS Mean,\r\n",
+							"\tPERCENTILE (Score,0.75) OVER () AS UpperQuartile,\r\n",
+							"\tPERCENTILE (Score,0.95) OVER () AS Percentile95,\r\n",
+							"\tPERCENTILE (Score,0.99) OVER () AS Percentile99,\r\n",
+							"    PERCENTILE (Score,1.0) OVER () AS Max\r\n",
+							"FROM inspection_lake.Inspections i\r\n",
+							"\tINNER JOIN inspection_lake.Restaurants r\r\n",
+							"\t\tON i.HSISID = r.HSISID\r\n",
+							"WHERE\r\n",
+							"    -- Some restaurants don't have scores because they weren't graded.\r\n",
+							"    Score > 0;\r\n",
+							"\"\"\")"
+						],
+						"outputs": [],
+						"execution_count": 13
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"We could perform a significant amount of data cleanup but we'll keep it simple and write these results out as-is into Parquet format.  Note that we are not partitioning by year and month, as there won't be many rows."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"df.write \\\r\n",
+							"  .mode(\"overwrite\") \\\r\n",
+							"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/curated/inspection_measures/')"
+						],
+						"outputs": [],
+						"execution_count": 14
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"Now make this available to the lake database as its own table."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"DROP TABLE IF EXISTS inspection_lake.InspectionMeasures;\r\n",
+							"CREATE TABLE IF NOT EXISTS inspection_lake.InspectionMeasures\r\n",
+							"USING Parquet\r\n",
+							"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/curated/inspection_measures/*.parquet'"
+						],
+						"outputs": [],
+						"execution_count": 15
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/001 - Load Inspection Measures')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Load Inspection Measures",
+						"type": "SynapseNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebook": {
+								"referenceName": "N005 - Curate Inspections",
+								"type": "NotebookReference"
+							},
+							"snapshot": true,
+							"sparkPool": {
+								"referenceName": "notebookrunner",
+								"type": "BigDataPoolReference"
+							},
+							"executorSize": "Small",
+							"conf": {
+								"spark.dynamicAllocation.enabled": true,
+								"spark.dynamicAllocation.minExecutors": 2,
+								"spark.dynamicAllocation.maxExecutors": 4
+							},
+							"driverSize": "Small",
+							"numExecutors": 2
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/notebooks/N005 - Curate Inspections')]",
+				"[concat(variables('workspaceId'), '/bigDataPools/notebookrunner')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Run on Data Load')]",
+			"type": "Microsoft.Synapse/workspaces/triggers",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "001 - Load Inspection Measures",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/synapse/blobs/wakeinspections/refined/inspections/",
+					"blobPathEndsWith": ".parquet",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('Run on Data Load_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/pipelines/001 - Load Inspection Measures')]"
+			]
 		}
 	]
 }

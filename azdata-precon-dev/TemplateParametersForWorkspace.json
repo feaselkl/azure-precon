@@ -19,6 +19,9 @@
 		},
 		"vacctkv_properties_typeProperties_baseUrl": {
 			"value": "https://vacctkv.vault.azure.net/"
+		},
+		"Run on Data Load_properties_typeProperties_scope": {
+			"value": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Storage/storageAccounts/azdatapreconstoredev"
 		}
 	}
 }
