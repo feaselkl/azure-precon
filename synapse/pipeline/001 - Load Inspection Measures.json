@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"notebook": {
-						"referenceName": "005 - Curate Inspections",
+						"referenceName": "N005 - Curate Inspections",
 						"type": "NotebookReference"
 					},
 					"snapshot": true,
