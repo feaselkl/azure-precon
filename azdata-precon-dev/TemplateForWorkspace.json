@@ -201,59 +201,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Dataflow1')]",
-			"type": "Microsoft.Synapse/workspaces/dataflows",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "O2Level_2118",
-								"type": "DatasetReference"
-							},
-							"name": "Oxygen2118"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "DataLakeBaseDirectory",
-								"type": "DatasetReference"
-							},
-							"name": "DataLake"
-						}
-					],
-					"transformations": [],
-					"scriptLines": [
-						"source(output(",
-						"          PlotID as integer,",
-						"          ReportDateTime as timestamp,",
-						"          O2Level as decimal(7,6)",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false,",
-						"     format: 'parquet',",
-						"     wildcardPaths:['*.parquet']) ~> Oxygen2118",
-						"Oxygen2118 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     format: 'parquet',",
-						"     umask: 0022,",
-						"     preCommands: [],",
-						"     postCommands: [],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> DataLake"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/O2Level_2118')]",
-				"[concat(variables('workspaceId'), '/datasets/DataLakeBaseDirectory')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
 			"type": "Microsoft.Synapse/workspaces/credentials",
 			"apiVersion": "2019-06-01-preview",
