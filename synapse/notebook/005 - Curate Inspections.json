@@ -1,0 +1,188 @@
+{
+	"name": "005 - Curate Inspections",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "notebookrunner",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "56g",
+			"driverCores": 8,
+			"executorMemory": "56g",
+			"executorCores": 8,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "c69f83d1-9589-4635-99a5-abd6dbc5f615"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/df403de8-b611-4a55-b347-93cebc510333/resourceGroups/synapse-precon/providers/Microsoft.Synapse/workspaces/azdata-precon-dev/bigDataPools/notebookrunner",
+				"name": "notebookrunner",
+				"type": "Spark",
+				"endpoint": "https://azdata-precon-dev.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/notebookrunner",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 8,
+				"memory": 56,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Curate Inspections\r\n",
+					"\r\n",
+					"In this notebook, we will create a curated table which aggregates some inspection details in an easy-to-consume format for a reporting tool.\r\n",
+					"\r\n",
+					"We are using `DISTINCT` instead of `GROUP BY` here because we have several window functions."
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"df = spark.sql(\"\"\"\r\n",
+					"SELECT DISTINCT\r\n",
+					"\tr.FacilityType,\r\n",
+					"\tr.City,\r\n",
+					"\ti.Inspector,\r\n",
+					"\tDATE_TRUNC('month', i.InspectionDate) AS InspectionMonth,\r\n",
+					"    COUNT(*) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS NumberOfRecords,\r\n",
+					"    PERCENTILE (Score,0.0) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS Min,\r\n",
+					"\tPERCENTILE (Score,0.25) OVER () AS LowerQuartile,\r\n",
+					"\tPERCENTILE (Score,0.5) OVER () AS Median,\r\n",
+					"\tAVG(Score) OVER (PARTITION BY r.FacilityType, r.City, i.Inspector, DATE_TRUNC('month', i.InspectionDate)) AS Mean,\r\n",
+					"\tPERCENTILE (Score,0.75) OVER () AS UpperQuartile,\r\n",
+					"\tPERCENTILE (Score,0.95) OVER () AS Percentile95,\r\n",
+					"\tPERCENTILE (Score,0.99) OVER () AS Percentile99,\r\n",
+					"    PERCENTILE (Score,1.0) OVER () AS Max\r\n",
+					"FROM inspection_lake.Inspections i\r\n",
+					"\tINNER JOIN inspection_lake.Restaurants r\r\n",
+					"\t\tON i.HSISID = r.HSISID\r\n",
+					"WHERE\r\n",
+					"    -- Some restaurants don't have scores because they weren't graded.\r\n",
+					"    Score > 0;\r\n",
+					"\"\"\")"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"We could perform a significant amount of data cleanup but we'll keep it simple and write these results out as-is into Parquet format.  Note that we are not partitioning by year and month, as there won't be many rows."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.write \\\r\n",
+					"  .mode(\"overwrite\") \\\r\n",
+					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/curated/inspection_measures/')"
+				],
+				"execution_count": 14
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Now make this available to the lake database as its own table."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"DROP TABLE IF EXISTS inspection_lake.InspectionMeasures;\r\n",
+					"CREATE TABLE IF NOT EXISTS inspection_lake.InspectionMeasures\r\n",
+					"USING Parquet\r\n",
+					"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/curated/inspection_measures/*.parquet'"
+				],
+				"execution_count": 15
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": null
+			}
+		]
+	}
+}
