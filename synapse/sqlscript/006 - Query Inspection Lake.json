@@ -1,13 +1,13 @@
 {
-	"name": "SQL script 1",
+	"name": "006 - Query Inspection Lake",
 	"properties": {
 		"content": {
-			"query": "select * from sys.databases;",
+			"query": "-- Be sure to run this from the inspection_lake database!\nUSE inspection_lake\n\nSELECT TOP 100 *\nFROM Inspections i\n    INNER JOIN Restaurants r\n        ON i.HSISID = r.HSISID\nWHERE\n    r.NAME LIKE N'%Chicken%';\nGO\n\n-- Dame's Chicken and Waffles\nSELECT TOP 100 *\nFROM Inspections i\nWHERE\n    i.HSISID = 4092017451\nORDER BY\n    InspectionDate ASC;\nGO\n\n-- Percentiles for Dame's Chicken and Waffles\nSELECT TOP(1)\n\ti.RestaurantName,\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    i.HSISID = 4092017451;\nGO\n\n-- Percentiles for all McDonald's locations\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    i.RestaurantName LIKE N'%McDonalds%' OR i.RestaurantName LIKE N'%McDonald''s%';\nGO\n\n-- Percentiles for all restaurants\nSELECT TOP(1)\n    COUNT(*) OVER () AS NumberOfRecords,\n    PERCENTILE_CONT (0.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Min,\n\tPERCENTILE_CONT (0.25)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS LowerQuartile,\n\tPERCENTILE_CONT (0.5)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Median,\n\tPERCENTILE_CONT (0.75)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS UpperQuartile,\n\tPERCENTILE_CONT (0.95)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile95,\n\tPERCENTILE_CONT (0.99)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Percentile99,\n    PERCENTILE_CONT (1.0)\n\t\tWITHIN GROUP (ORDER BY Score ASC) OVER () AS Max\nFROM Inspections i\nWHERE\n    -- Some restaurants don't have scores because they weren't graded.\n    Score > 0;\nGO\n",
 			"metadata": {
 				"language": "sql"
 			},
 			"currentConnection": {
-				"databaseName": "default",
+				"databaseName": "inspection_lake",
 				"poolName": "Built-in"
 			},
 			"resultLimit": 5000
