@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "2d1cc9a6-c426-4aca-86f9-65943b141c83"
+				"spark.autotune.trackingId": "e602f14e-af26-4597-bf03-05b101bd52d4"
 			}
 		},
 		"metadata": {
@@ -49,6 +49,111 @@
 		},
 		"cells": [
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"# Create Lake Database Tables\r\n",
+					"\r\n",
+					"A lake database is a construct in Azure Synapse Analytics which allows you to create tables based on existing data lake folders.  You can work with these tables as though they were normal tables, including data insertion, deletion, or updates.  In addition, you can query data in these tables from Spark pools or from the serverless SQL pool.\r\n",
+					"\r\n",
+					"You must create a lake database from Spark or from the **Data** tab."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"CREATE DATABASE inspection_lake"
+				],
+				"execution_count": 23
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"Once you have created a database, you can create tables.  Here is the SQL syntax:"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"CREATE TABLE IF NOT EXISTS inspection_lake.Restaurants\r\n",
+					"USING Parquet\r\n",
+					"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/**'"
+				],
+				"execution_count": 31
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					}
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"CREATE TABLE IF NOT EXISTS inspection_lake.Inspections\r\n",
+					"USING Parquet\r\n",
+					"LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/**'"
+				],
+				"execution_count": 30
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"microsoft": {
@@ -57,9 +162,32 @@
 				},
 				"source": [
 					"%%pyspark\n",
-					"spark.sql(\"CREATE TABLE IF NOT EXISTS default.Inspections USING Parquet LOCATION 'https://azdatapreconstoredev.dfs.core.windows.net/synapse/wakeinspections/refined/inspections/**'\")"
+					"spark.sql(\"CREATE TABLE IF NOT EXISTS inspection_lake.Inspections USING Parquet LOCATION 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/**'\").option('basePath', 'abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
 				],
-				"execution_count": 1
+				"execution_count": 28
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"DROP TABLE default.Inspections"
+				],
+				"execution_count": 22
 			},
 			{
 				"cell_type": "code",
@@ -98,15 +226,42 @@
 					},
 					"microsoft": {
 						"language": "sparksql"
-					}
+					},
+					"collapsed": false
 				},
 				"source": [
 					"%%sql\r\n",
 					"SELECT *\r\n",
-					"FROM inspection_lake.inspections\r\n",
+					"FROM default.Inspections\r\n",
 					"LIMIT 100;"
 				],
-				"execution_count": 2
+				"execution_count": 20
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"\r\n",
+					"SELECT *\r\n",
+					"FROM inspection_lake.Restaurants\r\n",
+					"LIMIT 20;"
+				],
+				"execution_count": 33
 			},
 			{
 				"cell_type": "code",
