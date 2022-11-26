@@ -2717,7 +2717,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "8a2d346c-e65a-4f43-92f8-b26501e10a8d"
+						"spark.autotune.trackingId": "d1575fa6-2b08-4726-ba57-d3db333e0749"
 					}
 				},
 				"metadata": {
@@ -2949,15 +2949,7 @@
 			"properties": {
 				"annotations": [],
 				"runtimeState": "Stopped",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "001 - Load Inspection Measures",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
+				"pipelines": [],
 				"type": "BlobEventsTrigger",
 				"typeProperties": {
 					"blobPathBeginsWith": "/synapse/blobs/wakeinspections/refined/inspections/",
@@ -2969,9 +2961,7 @@
 					]
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/pipelines/001 - Load Inspection Measures')]"
-			]
+			"dependsOn": []
 		}
 	]
 }
