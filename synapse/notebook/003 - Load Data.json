@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "a09cab44-e56d-457b-b4c1-09a4b1cbe480"
+				"spark.autotune.trackingId": "d64fb11a-1342-49ce-a660-876860e895af"
 			}
 		},
 		"metadata": {
@@ -81,7 +81,7 @@
 				"source": [
 					"from pyspark.sql.functions import *"
 				],
-				"execution_count": 5
+				"execution_count": 20
 			},
 			{
 				"cell_type": "markdown",
@@ -104,10 +104,12 @@
 					"df = spark.read.format('csv') \\\r\n",
 					"        .option('header',True) \\\r\n",
 					"        .option('sep', ',') \\\r\n",
+					"        .option('quote', '\\\"') \\\r\n",
+					"        .option('escape', '\\\"') \\\r\n",
 					"        .option('multiLine', True) \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspections/Food_Inspections.csv')"
 				],
-				"execution_count": 32
+				"execution_count": 21
 			},
 			{
 				"cell_type": "markdown",
@@ -138,7 +140,7 @@
 				"source": [
 					"df.head(10)"
 				],
-				"execution_count": 11
+				"execution_count": 22
 			},
 			{
 				"cell_type": "markdown",
@@ -169,7 +171,41 @@
 				"source": [
 					"df.dtypes"
 				],
-				"execution_count": 48
+				"execution_count": 23
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"An easy data quality check when we are importing CSV data is to make sure that we don't have delimiter leakage, such as cases when we have a string like \"This is something, but is it really?\" which should be in one column.\r\n",
+					"\r\n",
+					"We'll use the maximum length of each column as a quick indicator of whether the Description field ended up expanding beyond one column.  Type and Inspector should both be short columns, as they represent the inspection type (Inspection, Reinspection, etc.) and inspector's name, respectively."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_len = df.select([length(col).alias(col) for col in df.columns])\r\n",
+					"df_len.groupby().max().show()"
+				],
+				"execution_count": 24
 			},
 			{
 				"cell_type": "markdown",
@@ -214,7 +250,7 @@
 					"            .drop(\"PERMITID\") \\\r\n",
 					"            .drop(\"OBJECTID\")"
 				],
-				"execution_count": 33
+				"execution_count": 25
 			},
 			{
 				"cell_type": "markdown",
@@ -245,7 +281,7 @@
 				"source": [
 					"df_date.dtypes"
 				],
-				"execution_count": 56
+				"execution_count": 26
 			},
 			{
 				"cell_type": "markdown",
@@ -276,7 +312,7 @@
 				"source": [
 					"df_date.head(10)"
 				],
-				"execution_count": 17
+				"execution_count": 27
 			},
 			{
 				"cell_type": "markdown",
@@ -310,9 +346,11 @@
 					"rest = spark.read.format('csv') \\\r\n",
 					"        .option('header',True) \\\r\n",
 					"        .option('sep', ',') \\\r\n",
+					"        .option('quote', '\\\"') \\\r\n",
+					"        .option('escape', '\\\"') \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/restaurants/Restaurants_in_Wake_County.csv')"
 				],
-				"execution_count": 3
+				"execution_count": 28
 			},
 			{
 				"cell_type": "markdown",
@@ -343,7 +381,26 @@
 				"source": [
 					"rest.head(10)"
 				],
-				"execution_count": 24
+				"execution_count": 29
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"rest_len = rest.select([length(col).alias(col) for col in rest.columns])\r\n",
+					"rest_len.groupby().max().show()"
+				],
+				"execution_count": 30
 			},
 			{
 				"cell_type": "markdown",
@@ -379,7 +436,7 @@
 					"                .withColumn(\"X\", col(\"X\").cast('FLOAT')) \\\r\n",
 					"                .withColumn(\"Y\", col(\"Y\").cast('FLOAT'))"
 				],
-				"execution_count": 6
+				"execution_count": 31
 			},
 			{
 				"cell_type": "markdown",
@@ -476,7 +533,7 @@
 					"          .mode(\"overwrite\") \\\r\n",
 					"          .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/restaurants/')"
 				],
-				"execution_count": 41
+				"execution_count": 32
 			},
 			{
 				"cell_type": "markdown",
@@ -510,9 +567,11 @@
 					"vc = spark.read.format('csv') \\\r\n",
 					"        .option('header',True) \\\r\n",
 					"        .option('sep', ',') \\\r\n",
+					"        .option('quote', '\\\"') \\\r\n",
+					"        .option('escape', '\\\"') \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/violation_codes/Violation_Code.csv')"
 				],
-				"execution_count": 7
+				"execution_count": 33
 			},
 			{
 				"cell_type": "code",
@@ -548,7 +607,26 @@
 				"source": [
 					"vc.head(10)"
 				],
-				"execution_count": 45
+				"execution_count": 34
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"vc_len = vc.select([length(col).alias(col) for col in vc.columns])\r\n",
+					"vc_len.groupby().max().show()"
+				],
+				"execution_count": 35
 			},
 			{
 				"cell_type": "markdown",
@@ -581,7 +659,7 @@
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/violation_codes/')"
 				],
-				"execution_count": 46
+				"execution_count": 36
 			},
 			{
 				"cell_type": "markdown",
@@ -645,7 +723,7 @@
 				"source": [
 					"df_inspections = df_date.join(rest_final, ['HSISID'], \"left\")"
 				],
-				"execution_count": 34
+				"execution_count": 37
 			},
 			{
 				"cell_type": "markdown",
@@ -726,7 +804,7 @@
 					"                        .drop(\"GEOCODESTATUS\")\r\n",
 					""
 				],
-				"execution_count": 36
+				"execution_count": 38
 			},
 			{
 				"cell_type": "markdown",
@@ -790,7 +868,7 @@
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspections/')"
 				],
-				"execution_count": 38
+				"execution_count": 39
 			},
 			{
 				"cell_type": "markdown",
@@ -824,10 +902,12 @@
 					"df_iv = spark.read.format('csv') \\\r\n",
 					"        .option('header',True) \\\r\n",
 					"        .option('sep', ',') \\\r\n",
+					"        .option('quote', '\\\"') \\\r\n",
+					"        .option('escape', '\\\"') \\\r\n",
 					"        .option('multiLine', True) \\\r\n",
 					"        .load('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/raw/inspection_violations/Food_Inspection_Violations.csv')"
 				],
-				"execution_count": 39
+				"execution_count": 40
 			},
 			{
 				"cell_type": "markdown",
@@ -859,6 +939,25 @@
 					"df_iv.dtypes"
 				],
 				"execution_count": 9
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df_iv_len = df_iv.select([length(col).alias(col) for col in df_iv.columns])\r\n",
+					"df_iv_len.groupby().max().show()"
+				],
+				"execution_count": 41
 			},
 			{
 				"cell_type": "markdown",
@@ -905,7 +1004,7 @@
 					"            .drop(\"SHORTDESC\") \\\r\n",
 					"            .drop(\"CDCDATAITEM\")"
 				],
-				"execution_count": 40
+				"execution_count": 42
 			},
 			{
 				"cell_type": "code",
@@ -954,7 +1053,7 @@
 				"source": [
 					"df_ivjoin = df_ivkey.join(vc, ['VIOLATIONKEY'], \"left\").join(rest_final, ['HSISID'], \"left\")"
 				],
-				"execution_count": 41
+				"execution_count": 43
 			},
 			{
 				"cell_type": "markdown",
@@ -1064,7 +1163,7 @@
 					"                .drop(\"GEOCODESTATUS\")\r\n",
 					""
 				],
-				"execution_count": 43
+				"execution_count": 44
 			},
 			{
 				"cell_type": "code",
@@ -1115,7 +1214,7 @@
 					"  .mode(\"overwrite\") \\\r\n",
 					"  .parquet('abfss://synapse@azdatapreconstoredev.dfs.core.windows.net/wakeinspections/refined/inspection_violations/')"
 				],
-				"execution_count": 46
+				"execution_count": 45
 			},
 			{
 				"cell_type": "code",
