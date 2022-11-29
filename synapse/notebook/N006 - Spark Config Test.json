@@ -1,5 +1,5 @@
 {
-	"name": "Spark Config Test",
+	"name": "N006 - Spark Config Test",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -42,8 +42,7 @@
 				"sparkVersion": "3.2",
 				"nodeCount": 10,
 				"cores": 8,
-				"memory": 56,
-				"automaticScaleJobs": false
+				"memory": 56
 			},
 			"sessionKeepAliveTimeout": 30
 		},

@@ -13,7 +13,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "545d203d-83fa-4c2e-8529-6183df24565c"
+				"spark.autotune.trackingId": "08962f62-d975-4df8-9012-57e1bdc6db62"
 			}
 		},
 		"metadata": {
@@ -364,74 +364,6 @@
 					"b2.show()"
 				],
 				"execution_count": 28
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"## Reading Data\r\n",
-					"\r\n",
-					"We can use `spark.read` to read in a DataFrame.  There are several supported formats.  We'll use Parquet, which works nicely for our purposes."
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"# TODO!\r\n",
-					"\r\n",
-					"df = spark.read.parquet('https://cspolybasepublic.blob.core.windows.net/polybaserevealedpublicdata/O2Level.parquet')"
-				],
-				"execution_count": 29
-			},
-			{
-				"cell_type": "markdown",
-				"metadata": {
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"## Writing Data\r\n",
-					"\r\n",
-					"The next step is to write data out someplace."
-				]
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"# TODO!"
-				],
-				"execution_count": null
 			}
 		]
 	}
