@@ -418,7 +418,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "545d203d-83fa-4c2e-8529-6183df24565c"
+						"spark.autotune.trackingId": "1d9362fc-8ef7-4628-89c2-055f9c86d1dd"
 					}
 				},
 				"metadata": {
@@ -472,6 +472,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"x = 1\r\n",
 							"y = 2\r\n",
@@ -781,76 +782,6 @@
 						],
 						"outputs": [],
 						"execution_count": 28
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Reading Data\r\n",
-							"\r\n",
-							"We can use `spark.read` to read in a DataFrame.  There are several supported formats.  We'll use Parquet, which works nicely for our purposes."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"# TODO!\r\n",
-							"\r\n",
-							"df = spark.read.parquet('https://cspolybasepublic.blob.core.windows.net/polybaserevealedpublicdata/O2Level.parquet')"
-						],
-						"outputs": [],
-						"execution_count": 29
-					},
-					{
-						"cell_type": "markdown",
-						"metadata": {
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"## Writing Data\r\n",
-							"\r\n",
-							"The next step is to write data out someplace."
-						]
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							}
-						},
-						"source": [
-							"# TODO!"
-						],
-						"outputs": [],
-						"execution_count": null
 					}
 				]
 			},
@@ -2726,7 +2657,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Spark Config Test')]",
+			"name": "[concat(parameters('workspaceName'), '/N006 - Spark Config Test')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
